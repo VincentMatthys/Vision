@@ -29,6 +29,7 @@ void			getClicks(	Window w1,
 	setActiveWindow(w1);
 	while ((button = getMouse(p)) != 3)
 	{
+		drawCircle(p, 5, RED, 2);
 		cout << "Pixel in window " << window << " in position " << p << endl;
 		if (window == 1)
 		{
@@ -54,7 +55,8 @@ void			getClicks(	Window w1,
 Matrix<float>	getHomography(	const vector<IntPoint2>& pts1,
 								const vector<IntPoint2>& pts2)
 {
-	size_t n = min(pts1.size(), pts2.size());
+	size_t	n = min(pts1.size(), pts2.size());
+	size_t	i;
 
 	if (n < 4)
 	{
@@ -64,6 +66,29 @@ Matrix<float>	getHomography(	const vector<IntPoint2>& pts1,
 	Matrix<double> A(2 * n, 8);
 	Vector<double> B(2 * n);
     // ------------- TODO/A completer ----------
+	i = 0;
+	while (i < n)
+	{
+		A(2 * i, 0) = pts1.at(i)[0];
+		A(2 * i, 1) = pts1.at(i)[1];
+		A(2 * i, 2) = 1;
+		A(2 * i, 3) = 0;
+		A(2 * i, 4) = 0;
+		A(2 * i, 5) = 0;
+		A(2 * i, 6) = - pts1.at(i)[0] * pts2.at(i)[0];
+		A(2 * i, 7) = - pts1.at(i)[0] * pts2.at(i)[1];
+		A(2 * i + 1, 0) = 0;
+		A(2 * i + 1, 1) = 0;
+		A(2 * i + 1, 2) = 0;
+		A(2 * i + 1, 3) = pts1.at(i)[0];
+		A(2 * i + 1, 4) = pts1.at(i)[1];
+		A(2 * i + 1, 5) = 1;
+		A(2 * i + 1, 6) = - pts1.at(i)[0] * pts2.at(i)[1];
+		A(2 * i + 1, 7) = - pts1.at(i)[1] * pts2.at(i)[1];
+		B[2 * i] = -pts2.at(i)[0];
+		B[2 * i + 1] = -pts2.at(i)[1];
+		i++;
+	}
 
 	B = linSolve(A, B);
 	Matrix<float> H(3, 3);
@@ -72,16 +97,16 @@ Matrix<float>	getHomography(	const vector<IntPoint2>& pts1,
 	H(2, 0) = B[6]; H(2, 1) = B[7]; H(2, 2) = 1;
 
 	// Sanity check
-	for(size_t i=0; i<n; i++)
+	for(size_t i=0; i < n; i++)
 	{
-		float v1[]={(float)pts1[i].x(), (float)pts1[i].y(), 1.0f};
-		float v2[]={(float)pts2[i].x(), (float)pts2[i].y(), 1.0f};
+		float v1[] = {(float)pts1[i].x(), (float)pts1[i].y(), 1.0f};
+		float v2[] = {(float)pts2[i].x(), (float)pts2[i].y(), 1.0f};
 		Vector<float> x1(v1,3);
 		Vector<float> x2(v2,3);
-		x1 = H*x1;
-		cout	<< x1[1]*x2[2]-x1[2]*x2[1] << ' '
-				<< x1[2]*x2[0]-x1[0]*x2[2] << ' '
-				<< x1[0]*x2[1]-x1[1]*x2[0] << endl;
+		x1 = H * x1;
+		cout	<< x1[1] * x2[2] - x1[2] * x2[1] << ' '
+				<< x1[2] * x2[0] - x1[0] * x2[2] << ' '
+				<< x1[0] * x2[1] - x1[1] * x2[0] << endl;
 	}
 	return H;
 }
