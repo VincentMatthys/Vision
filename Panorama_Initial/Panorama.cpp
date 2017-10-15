@@ -76,7 +76,7 @@ Matrix<float>	getHomography(	const vector<IntPoint2>& pts1,
 		A(2 * i, 4) = 0;
 		A(2 * i, 5) = 0;
 		A(2 * i, 6) = - pts1.at(i)[0] * pts2.at(i)[0];
-		A(2 * i, 7) = - pts1.at(i)[0] * pts2.at(i)[1];
+		A(2 * i, 7) = - pts1.at(i)[1] * pts2.at(i)[0];
 		A(2 * i + 1, 0) = 0;
 		A(2 * i + 1, 1) = 0;
 		A(2 * i + 1, 2) = 0;
@@ -183,13 +183,24 @@ void			panorama(	const Image<Color,2>& I1,
 			&& 0 <= v[1] && v[1] < I1.height())
 			{
 				// If the preimage belongs to I1, then pull the I1 value to I
-				I(x, y) = I1(int(v[0]), int(v[1]));
-				// cout << I(0, 0	) << endl;
-				// cout << v[0] << "  " << v[1] << endl;
-				// cout << I1(int(v[0]), int(v[1]))[0] << endl;
+				// If overlaping : mean of I1 and I2
+				if (0 <= x + x0 && x + x0 < I2.width()
+				&& 0 <= y + y0 && y + y0 < I2.height())
+				{
+					// I(x, y) = (I1((size_t)(v[0]), (size_t)(v[1])) / 2)
+					// 	+ (I2((size_t)(x + x0) , (size_t)(y + y0)) / 2);
+					I(x, y)[0] = (char)(I1((size_t)v[0], (size_t)v[1])[0]
+							+ I2((size_t)(x + x0), (size_t)(y + y0))[0]) / 2;
+					I(x, y)[1] = (char)(I1((size_t)v[0], (size_t)v[1])[1]
+							+ I2((size_t)(x + x0), (size_t)(y + y0))[1]) / 2;
+					I(x, y)[2] = (char)(I1((size_t)v[0], (size_t)v[1])[2]
+							+ I2((size_t)(x + x0), (size_t)(y + y0))[2]) / 2;
+				}
+				else
+					I(x, y) = I1((size_t)(v[0]), (size_t)(v[1]));
 			}
 			// Checking if we are in I2
-			if (0 <= x + x0 && x + x0 < I2.width()
+			else if (0 <= x + x0 && x + x0 < I2.width()
 			&& 0 <= y + y0 && y + y0 < I2.height())
 			{
 				// If so, then put I2
@@ -228,17 +239,29 @@ int				main(int argc, char** argv)
 	vector<IntPoint2> pts1, pts2;
 	// getClicks(w1, w2, pts1, pts2);
 	IntPoint2 p;
+	// Vincent's points
 	// p[0] = 533; p[1] = 162; pts1.push_back(p);
 	// p[0] = 538; p[1] = 337; pts1.push_back(p);
 	// p[0] = 722; p[1] = 418; pts1.push_back(p);
 	// p[0] = 654; p[1] = 108; pts1.push_back(p);
+	// p[0] = 557; p[1] = 263; pts1.push_back(p);
+	// p[0] = 511; p[1] = 364; pts1.push_back(p);
+	// p[0] = 678; p[1] = 351; pts1.push_back(p);
+	// p[0] = 692; p[1] = 64; pts1.push_back(p);
+	// p[0] = 738; p[1] = 399; pts1.push_back(p);
+	//
 	//
 	// p[0] = 77; p[1] = 162; pts2.push_back(p);
 	// p[0] = 78; p[1] = 332; pts2.push_back(p);
 	// p[0] = 263; p[1] = 414; pts2.push_back(p);
 	// p[0] = 198; p[1] = 105; pts2.push_back(p);
+	// p[0] = 99; p[1] = 261; pts2.push_back(p);
+	// p[0] = 52; p[1] = 361; pts2.push_back(p);
+	// p[0] = 219; p[1] = 348; pts2.push_back(p);
+	// p[0] = 237; p[1] = 63; pts2.push_back(p);
+	// p[0] = 280; p[1] = 396; pts2.push_back(p);
 
-	// Mario points
+	// Mario's points
 	p[0] = 603; p[1] = 427; pts1.push_back(p);
 	p[0] = 534; p[1] = 145; pts1.push_back(p);
 	p[0] = 746; p[1] = 113; pts1.push_back(p);
