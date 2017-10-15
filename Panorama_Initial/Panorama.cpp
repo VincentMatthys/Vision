@@ -167,13 +167,15 @@ void			panorama(	const Image<Color,2>& I1,
 	// ------------- TODO/A completer ----------
 	x = 0;
 	H_inv = inverse(H);
+	cout << "Image size : " << I.width() << " x " << I.height() << endl;
 	while (x < (size_t)I.width())
 	{
+		// cout << int(x + x0) << endl;
 		y = 0;
 		while (y < (size_t)I.height())
 		{
-			v[0] = x;
-			v[1] = y;
+			v[0] = x + x0;
+			v[1] = y + y0;
 			v[2] = 1;
 			v = H_inv * v;
 			// Checking if the preimage of v lies in I1
@@ -186,8 +188,16 @@ void			panorama(	const Image<Color,2>& I1,
 				// cout << v[0] << "  " << v[1] << endl;
 				// cout << I1(int(v[0]), int(v[1]))[0] << endl;
 			}
-			if (x < I2.width() && y < I2.height())
-				I(x, y) = (I(x,y) + I2(x , y)) / 2;
+			// Checking if we are in I2
+			if (0 <= x + x0 && x + x0 < I2.width()
+			&& 0 <= y + y0 && y + y0 < I2.height())
+			{
+				// If so, then put I2
+				// I(x, y) = (I(x,y) + I2(x , y)) / 2;
+				// I(x, y) = (I(x, y) + I2((size_t)(x + x0) , (size_t)(y + y0))) / 2;
+				I(x, y) = I2((size_t)(x + x0) , (size_t)(y + y0));
+
+			}
 			y++;
 		}
 		x++;
