@@ -1,3 +1,4 @@
+// Student : Vincent Matthys
 // Imagine++ project
 // Project:  Panorama
 // Author:   Pascal Monasse
@@ -8,11 +9,10 @@
 #include <Imagine/LinAlg.h>
 #include <vector>
 #include <sstream>
-using namespace Imagine;
+using 	namespace Imagine;
 using namespace std;
 
 // Record clicks in two images, until right button click
-// Vector in std : http://fr.cppreference.com/w/cpp/container/vector
 void			getClicks(	Window w1,
 							Window w2,
 							vector<IntPoint2>& pts1,
@@ -23,28 +23,35 @@ void			getClicks(	Window w1,
 	unsigned int	button;
 	int				window;
 
-	cout << "Select similar points in both windows." << endl;
+	cout << "\033[1;32mSelect similar points in both windows sequentially.";
+	cout << "\033[0m" << endl;
 	cout << "Starting with the first window -- " << endl;
 	window = 1;
 	setActiveWindow(w1);
+	// Keep listening until user's right click
 	while ((button = getMouse(p)) != 3)
 	{
-		drawCircle(p, 5, RED, 2);
-		cout << "Pixel in window " << window << " in position " << p << endl;
+		cout << "Pixel in window \033[1;32m" << window << "\033[0m";
+		cout << " in position " << p << endl;
+		// For current window, push back the click to corersponding vector
+		// Then switch to the other window
 		if (window == 1)
 		{
+			drawCircle(p, 5, RED, 2);
 			window = 2;
 			pts1.push_back(p);
 			setActiveWindow(w2);
 		}
 		else
 		{
+			drawCircle(p, 5, YELLOW, 2);
 			window = 1;
 			pts2.push_back(p);
 			setActiveWindow(w1);
 		}
 	}
 	cout << "Number of points selected : " << pts1.size() << endl;
+	// Error messaging if no enough points for correspondances or missing entry
 	if (pts2.size() < 4)
 		cerr << "Wrong number of points selected" << endl;
 	else if (pts1.size() != pts2.size())
@@ -67,8 +74,10 @@ Matrix<float>	getHomography(	const vector<IntPoint2>& pts1,
 	Vector<double> B(2 * n);
     // ------------- TODO/A completer ----------
 	i = 0;
+	// For every correspondance
 	while (i < n)
 	{
+		// Fill A for with the two equations associated with the corerspondance
 		A(2 * i, 0) = pts1.at(i)[0];
 		A(2 * i, 1) = pts1.at(i)[1];
 		A(2 * i, 2) = 1;
@@ -85,11 +94,13 @@ Matrix<float>	getHomography(	const vector<IntPoint2>& pts1,
 		A(2 * i + 1, 5) = 1;
 		A(2 * i + 1, 6) = - pts1.at(i)[0] * pts2.at(i)[1];
 		A(2 * i + 1, 7) = - pts1.at(i)[1] * pts2.at(i)[1];
+		// Fill B with the coordinates of X in I2
 		B[2 * i] = pts2.at(i)[0];
 		B[2 * i + 1] = pts2.at(i)[1];
 		i++;
 	}
 
+	// Solve the linear system
 	B = linSolve(A, B);
 	Matrix<float> H(3, 3);
 	H(0, 0) = B[0]; H(0, 1) = B[1]; H(0, 2) = B[2];
@@ -97,6 +108,7 @@ Matrix<float>	getHomography(	const vector<IntPoint2>& pts1,
 	H(2, 0) = B[6]; H(2, 1) = B[7]; H(2, 2) = 1;
 
 	// Sanity check
+	cout << "Sanity check : every line should be close to 0 0 0" << endl;
 	for(size_t i = 0; i < n; i++)
 	{
 		float v1[] = {(float)pts1[i].x(), (float)pts1[i].y(), 1.0f};
@@ -143,6 +155,7 @@ void			panorama(	const Image<Color,2>& I1,
 	size_t			x;
 	size_t			y;
 
+	// Find the width and the height necessary to pull I1 in I2
 	v[0] = 0; v[1] = 0; v[2] = 1;
 	v = H * v; v /= v[2];
 	growTo(x0, y0, x1, y1, v[0], v[1]);
@@ -166,11 +179,12 @@ void			panorama(	const Image<Color,2>& I1,
 	I.fill(WHITE);
 	// ------------- TODO/A completer ----------
 	x = 0;
+	// Inverse the matrix to find the preimage in I1 of every pixel in I
 	H_inv = inverse(H);
 	cout << "Image size : " << I.width() << " x " << I.height() << endl;
+	// Pass through every pixel in I1 and I2
 	while (x < (size_t)I.width())
 	{
-		// cout << int(x + x0) << endl;
 		y = 0;
 		while (y < (size_t)I.height())
 		{
@@ -178,6 +192,7 @@ void			panorama(	const Image<Color,2>& I1,
 			v[1] = y + y0;
 			v[2] = 1;
 			v = H_inv * v;
+			v = v / v[2];
 			// Checking if the preimage of v lies in I1
 			if (0 <= v[0] && v[0] < I1.width()
 			&& 0 <= v[1] && v[1] < I1.height())
@@ -187,25 +202,21 @@ void			panorama(	const Image<Color,2>& I1,
 				if (0 <= x + x0 && x + x0 < I2.width()
 				&& 0 <= y + y0 && y + y0 < I2.height())
 				{
-					// I(x, y) = (I1((size_t)(v[0]), (size_t)(v[1])) / 2)
-					// 	+ (I2((size_t)(x + x0) , (size_t)(y + y0)) / 2);
-					I(x, y)[0] = (char)(I1((size_t)v[0], (size_t)v[1])[0]
+					I(x, y)[0] = (float)(I1((size_t)v[0], (size_t)v[1])[0]
 							+ I2((size_t)(x + x0), (size_t)(y + y0))[0]) / 2;
-					I(x, y)[1] = (char)(I1((size_t)v[0], (size_t)v[1])[1]
+					I(x, y)[1] = (float)(I1((size_t)v[0], (size_t)v[1])[1]
 							+ I2((size_t)(x + x0), (size_t)(y + y0))[1]) / 2;
-					I(x, y)[2] = (char)(I1((size_t)v[0], (size_t)v[1])[2]
+					I(x, y)[2] = (float)(I1((size_t)v[0], (size_t)v[1])[2]
 							+ I2((size_t)(x + x0), (size_t)(y + y0))[2]) / 2;
 				}
 				else
-					I(x, y) = I1((size_t)(v[0]), (size_t)(v[1]));
+					I(x, y) = I1((int)(v[0]), (int)(v[1]));
 			}
 			// Checking if we are in I2
 			else if (0 <= x + x0 && x + x0 < I2.width()
 			&& 0 <= y + y0 && y + y0 < I2.height())
 			{
 				// If so, then put I2
-				// I(x, y) = (I(x,y) + I2(x , y)) / 2;
-				// I(x, y) = (I(x, y) + I2((size_t)(x + x0) , (size_t)(y + y0))) / 2;
 				I(x, y) = I2((size_t)(x + x0) , (size_t)(y + y0));
 
 			}
@@ -213,6 +224,8 @@ void			panorama(	const Image<Color,2>& I1,
 		}
 		x++;
 	}
+	// Save final panorama and display it
+	save(I, "panorama.png");
 	display(I,0,0);
 }
 
@@ -237,40 +250,7 @@ int				main(int argc, char** argv)
 
 	// Get user's clicks in images
 	vector<IntPoint2> pts1, pts2;
-	// getClicks(w1, w2, pts1, pts2);
-	IntPoint2 p;
-	// Vincent's points
-	// p[0] = 533; p[1] = 162; pts1.push_back(p);
-	// p[0] = 538; p[1] = 337; pts1.push_back(p);
-	// p[0] = 722; p[1] = 418; pts1.push_back(p);
-	// p[0] = 654; p[1] = 108; pts1.push_back(p);
-	// p[0] = 557; p[1] = 263; pts1.push_back(p);
-	// p[0] = 511; p[1] = 364; pts1.push_back(p);
-	// p[0] = 678; p[1] = 351; pts1.push_back(p);
-	// p[0] = 692; p[1] = 64; pts1.push_back(p);
-	// p[0] = 738; p[1] = 399; pts1.push_back(p);
-	//
-	//
-	// p[0] = 77; p[1] = 162; pts2.push_back(p);
-	// p[0] = 78; p[1] = 332; pts2.push_back(p);
-	// p[0] = 263; p[1] = 414; pts2.push_back(p);
-	// p[0] = 198; p[1] = 105; pts2.push_back(p);
-	// p[0] = 99; p[1] = 261; pts2.push_back(p);
-	// p[0] = 52; p[1] = 361; pts2.push_back(p);
-	// p[0] = 219; p[1] = 348; pts2.push_back(p);
-	// p[0] = 237; p[1] = 63; pts2.push_back(p);
-	// p[0] = 280; p[1] = 396; pts2.push_back(p);
-
-	// Mario's points
-	p[0] = 603; p[1] = 427; pts1.push_back(p);
-	p[0] = 534; p[1] = 145; pts1.push_back(p);
-	p[0] = 746; p[1] = 113; pts1.push_back(p);
-	p[0] = 745; p[1] = 359; pts1.push_back(p);
-
-	p[0] = 149; p[1] = 422; pts2.push_back(p);
-	p[0] = 77; p[1] = 146; pts2.push_back(p);
-	p[0] = 292; p[1] = 117; pts2.push_back(p);
-	p[0] = 287; p[1] = 360; pts2.push_back(p);
+	getClicks(w1, w2, pts1, pts2);
 	vector<IntPoint2>::const_iterator it;
 	cout << "pts1=" << endl;
 	for(it = pts1.begin(); it != pts1.end(); it++)
@@ -287,6 +267,9 @@ int				main(int argc, char** argv)
 	// Apply homography
 	panorama(I1, I2, H);
 
+	// Wait for user's right click
+	cout << "\033[1;32m";
 	endGraphics();
+	cout << "\033[0m" << endl;
 	return (0);
 }
