@@ -32,19 +32,19 @@ void			getClicks(	Window w1,
 	while ((button = getMouse(p)) != 3)
 	{
 		cout << "Pixel in window \033[1;32m" << window << "\033[0m";
-		cout << " in position " << p << endl;
+		cout << " in position " << p << "selected" << endl;
 		// For current window, push back the click to corersponding vector
 		// Then switch to the other window
 		if (window == 1)
 		{
-			drawCircle(p, 5, RED, 2);
+			drawCircle(p, 10, RED, 2);
 			window = 2;
 			pts1.push_back(p);
 			setActiveWindow(w2);
 		}
 		else
 		{
-			drawCircle(p, 5, YELLOW, 2);
+			drawCircle(p, 10	, YELLOW, 2);
 			window = 1;
 			pts2.push_back(p);
 			setActiveWindow(w1);
@@ -218,7 +218,6 @@ void			panorama(	const Image<Color,2>& I1,
 			{
 				// If so, then put I2
 				I(x, y) = I2((size_t)(x + x0) , (size_t)(y + y0));
-
 			}
 			y++;
 		}
