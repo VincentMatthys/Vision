@@ -60,8 +60,7 @@ void				algoSIFT(	Image<Color,2> I1,
 FMatrix<float,3,3>	computeF(vector<Match>& matches)
 {
 	const float 			distMax = 1.5f; // Pixel error for inlier/outlier	discrimination
-	// int Niter = 100000; // Adjusted dynamically
-	int						Niter = 10; // Adjusted dynamically
+	int Niter = 100000; // Adjusted dynamically
 	FMatrix<float,3,3> 		bestF;
 	vector<int>				bestInliers;
 	// --------------- TODO ------------
@@ -140,21 +139,22 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 			x_prime = current_F*x_prime;
 			distance = (x*x_prime)*(x*x_prime) / norm2(x_prime);
 			// cout << "Distance" << distance << endl;
-			if (distance < 0.2)
+			if (distance <= 0.005)
 				current_all_inliers.push_back(i);
 		}
 		cout <<  "Number of inliers at Niter :";
 		cout << Niter << "      ->     \033[1;34m"	;
 		cout << current_all_inliers.size() << endl;
 		cout << "\033[0m" << endl;
-		// for
 		// If more outliers than before, keep it, else, repeat the loop
-		// if ()
-		// {
-		//
-		// }
-		// else
-		// 	;
+		if (current_all_inliers.size() > bestInliers.size())
+		{
+			bestInliers = current_all_inliers;
+			Niter = min((int)(std::log(BETA) / std::log(1 - (float)pow(((float)bestInliers.size() / matches.size()), 8))), Niter);
+			// cout << "New Niter  --- " << Niter << endl;
+			// cout << std::log(1 - pow(((float)bestInliers.size() / matches.size()), 8)) << endl ;
+		}
+		// Reestimate the Niter (which is then lower than the previous one)
 	}
 
 	// DO NOT FORGET NORMALIZATION OF POINTS
