@@ -59,19 +59,25 @@ void				algoSIFT(	Image<Color,2> I1,
 // Parameter matches is filtered to keep only inliers as output.
 FMatrix<float,3,3>	computeF(vector<Match>& matches)
 {
-	const float distMax = 1.5f; // Pixel error for inlier/outlier	discrimination
+	const float 			distMax = 1.5f; // Pixel error for inlier/outlier	discrimination
 	// int Niter = 100000; // Adjusted dynamically
-	int Niter = 10; // Adjusted dynamically
-	FMatrix<float,3,3> bestF;
-	vector<int> bestInliers;
+	int						Niter = 10; // Adjusted dynamically
+	FMatrix<float,3,3> 		bestF;
+	vector<int>				bestInliers;
 	// --------------- TODO ------------
 	// Vector of current inliers
-	vector<Match> current_Inliers;
+	vector<Match> 			current_Inliers;
+	vector<int>				current_all_inliers;
 	// Current Fundamental Matrix
+	FMatrix<float, 3, 3>	current_F;
 	// Matrix of points
-	FMatrix<double, 9, 9> A;
+	FMatrix<double, 9, 9> 	A;
 	// Normalization Matrix
-	Matrix<float> N(3, 3);
+	FMatrix<float, 3, 3> 	N;
+	// Tools for computing the distance
+	FVector<float, 3>		x;
+	FVector<float, 3>		x_prime;
+	float 					distance;
 	N(0, 0) = 0.001; N(0, 1) = 0; N(0, 2) = 0;
 	N(1, 0) = 0; N(1, 1) = 0.001; N(1, 2) = 0;
 	N(2, 0) = 0; N(2, 1) = 0; N(2, 2) = 1;
@@ -107,8 +113,40 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 		svd(A, U, S, Vt);
 		// cout << "SVD check 1: "  << norm(A-U*Diagonal(S)*Vt) << endl;
 		// Get the 8th right singular vectors, i.e : the 8th line of Vt.
-		cout << Vt.getRow(7) << endl;
+		// cout << Vt.getRow(7) << endl;
+		current_F(0, 0) = Vt.getRow(7)[0]; current_F(0, 1) = Vt.getRow(7)[1]; current_F(0, 2) = Vt.getRow(7)[2];
+		current_F(1, 0) = Vt.getRow(7)[3]; current_F(1, 1) = Vt.getRow(7)[4]; current_F(1, 2) = Vt.getRow(7)[5];
+		current_F(2, 0) = Vt.getRow(7)[6]; current_F(2, 1) = Vt.getRow(7)[7]; current_F(2, 2) = Vt.getRow(7)[8];
 
+		// cout << "Before renormalization" << endl;
+		// cout << current_F << endl;
+		current_F = N*current_F*N;
+		// cout << current_F << endl;
+		cout << "F=\033[1;31m\n" << current_F << endl;
+		cout << "\033[0m" << endl;
+
+		// Count the number of inliers
+		current_all_inliers.clear();
+		for(size_t i = 0; i < matches.size(); i++)
+		{
+			// x = {matches[i].x1, matches[i].y1};
+			// x_prime = {matches[i].x2, matches[i].y2};
+			x[0] = matches[i].x1;
+			x[1] = matches[i].y1;
+			x[2] = 1;
+			x_prime[0] = matches[i].x2;
+			x_prime[1] = matches[i].y2;
+			x_prime[2] = 1;
+			x_prime = current_F*x_prime;
+			distance = (x*x_prime)*(x*x_prime) / norm2(x_prime);
+			// cout << "Distance" << distance << endl;
+			if (distance < 0.2)
+				current_all_inliers.push_back(i);
+		}
+		cout <<  "Number of inliers at Niter :";
+		cout << Niter << "      ->     \033[1;34m"	;
+		cout << current_all_inliers.size() << endl;
+		cout << "\033[0m" << endl;
 		// for
 		// If more outliers than before, keep it, else, repeat the loop
 		// if ()
