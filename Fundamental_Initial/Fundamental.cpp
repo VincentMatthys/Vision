@@ -60,14 +60,16 @@ void				algoSIFT(	Image<Color,2> I1,
 FMatrix<float,3,3>	computeF(vector<Match>& matches)
 {
 	const float distMax = 1.5f; // Pixel error for inlier/outlier	discrimination
-	int Niter = 100000; // Adjusted dynamically
+	// int Niter = 100000; // Adjusted dynamically
+	int Niter = 10; // Adjusted dynamically
 	FMatrix<float,3,3> bestF;
 	vector<int> bestInliers;
 	// --------------- TODO ------------
 	// Vector of current inliers
 	vector<Match> current_Inliers;
+	// Current Fundamental Matrix
 	// Matrix of points
-	Matrix<double> A(9, 9);
+	FMatrix<double, 9, 9> A;
 	// Normalization Matrix
 	Matrix<float> N(3, 3);
 	N(0, 0) = 0.001; N(0, 1) = 0; N(0, 2) = 0;
@@ -100,8 +102,14 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 			A(8, 8) = 0;
 		}
 		// Then compute F_tilda for these couples
+		FVector<double, 9> S;
+		FMatrix<double, 9, 9> U, Vt;
+		svd(A, U, S, Vt);
+		// cout << "SVD check 1: "  << norm(A-U*Diagonal(S)*Vt) << endl;
+		// Get the 8th right singular vectors, i.e : the 8th line of Vt.
+		cout << Vt.getRow(7) << endl;
 
-
+		// for
 		// If more outliers than before, keep it, else, repeat the loop
 		// if ()
 		// {
@@ -164,9 +172,8 @@ int 				main(int argc, char* argv[])
 	// Waits for a mouse click in active window
 	click();
 
-	for(size_t i = 0; i< 10; i++)
-		cout << rand()%matches.size() << endl;
-	// FMatrix<float,3,3> F = computeF(matches);
+
+	FMatrix<float,3,3> F = computeF(matches);
 	// cout << "F = "<< endl << F;
 
 	// // Redisplay with matches
