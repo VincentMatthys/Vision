@@ -1,3 +1,4 @@
+// Student : Vincent Matthys
 // Imagine++ project
 // Project:  Fundamental
 // Author:   Pascal Monasse
@@ -63,7 +64,55 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 	FMatrix<float,3,3> bestF;
 	vector<int> bestInliers;
 	// --------------- TODO ------------
+	// Vector of current inliers
+	vector<Match> current_Inliers;
+	// Matrix of points
+	Matrix<double> A(9, 9);
+	// Normalization Matrix
+	Matrix<float> N(3, 3);
+	N(0, 0) = 0.001; N(0, 1) = 0; N(0, 2) = 0;
+	N(1, 0) = 0; N(1, 1) = 0.001; N(1, 2) = 0;
+	N(2, 0) = 0; N(2, 1) = 0; N(2, 2) = 1;
+	// Do Niter iterations
+	while (Niter--)
+	{
+		current_Inliers.clear();
+		// Take arbitrary 8 couples (p, p') from matches
+		for(size_t i = 0; i < 4; i++)
+		{
+			current_Inliers.push_back(matches[rand()%(matches.size())]);
+			// Fill A with the equation associated to the corerspondance
+			for (size_t j = 0; j < 2; j++)
+			{
+				// Normalizes by 0.001 for each pixel coordinate
+				A(2 * i + j, 0) = 0.000001 * current_Inliers[i].x1 * current_Inliers[i].x2;
+				A(2 * i + j, 1) = 0.000001 * current_Inliers[i].x1 * current_Inliers[i].y2;
+				A(2 * i + j, 2) = 0.001 * current_Inliers[i].x1;
+				A(2 * i + j, 3) = 0.000001 * current_Inliers[i].y1 * current_Inliers[i].x2;
+				A(2 * i + j, 4) = 0.000001 * current_Inliers[i].y1 * current_Inliers[i].y2;
+				A(2 * i + j, 5) = 0.001 * current_Inliers[i].y1;
+				A(2 * i + j, 6) = 0.001 * current_Inliers[i].x2;
+				A(2 * i + j, 7) = 0.001 * current_Inliers[i].y2;
+				A(2 * i + j, 8) = 1;
+				// Fill last line of A with 0 to use square SVD decomposition
+				A(8, 2 * i + j) = 0;
+			}
+			A(8, 8) = 0;
+		}
+		// Then compute F_tilda for these couples
+
+
+		// If more outliers than before, keep it, else, repeat the loop
+		// if ()
+		// {
+		//
+		// }
+		// else
+		// 	;
+	}
+
 	// DO NOT FORGET NORMALIZATION OF POINTS
+
 
 
 	// Updating matches with inliers only
@@ -101,38 +150,45 @@ int 				main(int argc, char* argv[])
 	if(!load(I1, s1)
 	|| !load(I2, s2))
 	{
-		cerr<< "Unable to load images" << endl;
+		cerr << "Unable to load images" << endl;
 		return 1;
 	}
 	int w = I1.width();
 	openWindow(2*w, I1.height());
-	display(I1,0,0);
-	display(I2,w,0);
+	display(I1, 0, 0);
+	display(I2, w, 0);
 
 	vector<Match> matches;
 	algoSIFT(I1, I2, matches);
 	cout << " matches: " << matches.size() << endl;
+	// Waits for a mouse click in active window
 	click();
 
-	FMatrix<float,3,3> F = computeF(matches);
-	cout << "F = "<< endl << F;
+	for(size_t i = 0; i< 10; i++)
+		cout << rand()%matches.size() << endl;
+	// FMatrix<float,3,3> F = computeF(matches);
+	// cout << "F = "<< endl << F;
 
-	// Redisplay with matches
-	display(I1,0,0);
-	display(I2,w,0);
-	for(size_t i = 0; i<matches.size(); i++)
-	{
-		Color c(rand()%256, rand()%256, rand()%256);
-		fillCircle(matches[i].x1 + 0, matches[i].y1, 2, c);
-		fillCircle(matches[i].x2 + w, matches[i].y2, 2, c);
-	}
-	click();
+	// // Redisplay with matches
+	// display(I1,0,0);
+	// display(I2,w,0);
+	// for(size_t i = 0; i<matches.size(); i++)
+	// {
+	// 	Color c(rand()%256, rand()%256, rand()%256);
+	// 	fillCircle(matches[i].x1 + 0, matches[i].y1, 2, c);
+	// 	fillCircle(matches[i].x2 + w, matches[i].y2, 2, c);
+	// }
+	// click();
+	//
+	// // Redisplay without SIFT points
+	// display(I1,0,0);
+	// display(I2,w,0);
+	// displayEpipolar(I1, I2, F);
+	//
 
-	// Redisplay without SIFT points
-	display(I1,0,0);
-	display(I2,w,0);
-	displayEpipolar(I1, I2, F);
-
+	// Wait for user's right click
+	cout << "\033[1;32m";
 	endGraphics();
-	return 0;
+	cout << "\033[0m" << endl;
+	return (0);
 }
