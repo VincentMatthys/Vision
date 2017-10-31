@@ -67,10 +67,15 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 	// Vector of current inliers
 	vector<Match> 			current_Inliers;
 	vector<int>				current_all_inliers;
+	// counter for loops
+	size_t					count;
 	// Current Fundamental Matrix
 	FMatrix<float, 3, 3>	current_F;
 	// Matrix of points
 	FMatrix<double, 9, 9> 	A;
+	// Matrix for SVD decomposition
+	FVector<double, 9> S;
+	FMatrix<double, 9, 9> U, Vt;
 	// Normalization Matrix
 	FMatrix<float, 3, 3> 	N;
 	// Tools for computing the distance
@@ -81,35 +86,32 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 	N(1, 0) = 0; N(1, 1) = 0.001; N(1, 2) = 0;
 	N(2, 0) = 0; N(2, 1) = 0; N(2, 2) = 1;
 	// Do Niter iterations
-	while (Niter--)
+	count = 0;
+	while (count < Niter)
 	{
 		current_Inliers.clear();
 
 		// Take arbitrary 8 couples (p, p') from matches
-		for(size_t i = 0; i < 4; i++)
+		for(size_t i = 0; i < 8; i++)
 		{
 			current_Inliers.push_back(matches[rand()%(matches.size())]);
 			// Fill A with the equation associated to the corerspondance
-			for (size_t j = 0; j < 2; j++)
-			{
-				// Normalizes by 0.001 for each pixel coordinate
-				A(2 * i + j, 0) = 0.000001 * current_Inliers[i].x1 * current_Inliers[i].x2;
-				A(2 * i + j, 1) = 0.000001 * current_Inliers[i].x1 * current_Inliers[i].y2;
-				A(2 * i + j, 2) = 0.001 * current_Inliers[i].x1;
-				A(2 * i + j, 3) = 0.000001 * current_Inliers[i].y1 * current_Inliers[i].x2;
-				A(2 * i + j, 4) = 0.000001 * current_Inliers[i].y1 * current_Inliers[i].y2;
-				A(2 * i + j, 5) = 0.001 * current_Inliers[i].y1;
-				A(2 * i + j, 6) = 0.001 * current_Inliers[i].x2;
-				A(2 * i + j, 7) = 0.001 * current_Inliers[i].y2;
-				A(2 * i + j, 8) = 1;
-				// Fill last line of A with 0 to use square SVD decomposition
-				A(8, 2 * i + j) = 0;
-			}
-			A(8, 8) = 0;
+			// Normalizes by 0.001 for each pixel coordinate
+			A(i, 0) = 0.000001 * current_Inliers[i].x1 * current_Inliers[i].x2;
+			A(i, 1) = 0.000001 * current_Inliers[i].x1 * current_Inliers[i].y2;
+			A(i, 2) = 0.001 * current_Inliers[i].x1;
+			A(i, 3) = 0.000001 * current_Inliers[i].y1 * current_Inliers[i].x2;
+			A(i, 4) = 0.000001 * current_Inliers[i].y1 * current_Inliers[i].y2;
+			A(i, 5) = 0.001 * current_Inliers[i].y1;
+			A(i, 6) = 0.001 * current_Inliers[i].x2;
+			A(i, 7) = 0.001 * current_Inliers[i].y2;
+			A(i, 8) = 1;
+			// Fill last line of A with 0 to use square SVD decomposition
+			A(8, i) = 0;
 		}
+		A(8, 8) = 0;
+
 		// Then compute F_tilda for these couples
-		FVector<double, 9> S;
-		FMatrix<double, 9, 9> U, Vt;
 		svd(A, U, S, Vt);
 
 		current_F(0, 0) = Vt.getRow(7)[0]; current_F(0, 1) = Vt.getRow(7)[1]; current_F(0, 2) = Vt.getRow(7)[2];
@@ -134,7 +136,6 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 			x_prime[2] = 1;
 			x_prime = current_F*x_prime;
 			distance = (x*x_prime)*(x*x_prime) / norm2(x_prime);
-			// cout << "Distance" << distance << endl;
 			if (distance <= 0.01)
 				current_all_inliers.push_back(i);
 		}
@@ -154,14 +155,62 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 			Niter = min((int)(std::log(BETA) / std::log(1 - pow(((float)bestInliers.size() / matches.size()), 8))), 10000);
 
 		}
-		// cout << std::log(1 - pow(((float)bestInliers.size() / matches.size()), 8)) << endl ;
+		count++;
 	}
+	cout << "Number of RANSAC iterations : " << count << endl;
 
 	// Updating matches with inliers only
 	vector<Match> all=matches;
 	matches.clear();
 	for(size_t i = 0; i<bestInliers.size(); i++)
 		matches.push_back(all[bestInliers[i]]);
+
+	// Refine resulting F with least square minimization based on all inliers
+	// Number of total inliers
+	count = matches.size();
+	Matrix<double> A_final(count, 9);
+	Vector<double> B(count);
+	// Vector<double> S_final(count);
+	// FMatrix<double, 9, 9> Vt_final;
+	// Matrix<double> U_final(count, count);
+	while (count--)
+	{
+		// Fill A with the equation associated to the corerspondance
+		// Normalizes by 0.001 for each pixel coordinate
+		A_final(count, 0) = 0.000001 * matches[count].x1 * matches[count].x2;
+		A_final(count, 1) = 0.000001 * matches[count].x1 * matches[count].y2;
+		A_final(count, 2) = 0.001 * matches[count].x1;
+		A_final(count, 3) = 0.000001 * matches[count].y1 * matches[count].x2;
+		A_final(count, 4) = 0.000001 * matches[count].y1 * matches[count].y2;
+		A_final(count, 5) = 0.001 * matches[count].y1;
+		A_final(count, 6) = 0.001 * matches[count].x2;
+		A_final(count, 7) = 0.001 * matches[count].y2;
+		A_final(count, 8) = 1;
+		B[count] = 0;
+	}
+	cout << "A_final = " << A_final << endl;
+	cout << "B = " << B << endl;
+	B = linSolve(A_final, B);
+	cout << "Final version" << B << endl;
+	// bestF(0, 0) = B[0]; bestF(0, 1) = B[1]; bestF(0, 2) = B[2];
+	// bestF(1, 0) = B[3]; bestF(1, 1) = B[4]; bestF(1, 2) = B[5];
+	// bestF(2, 0) = B[6]; bestF(2, 1) = B[7]; bestF(2, 2) = B[8];
+	// bestF = N*bestF*N;
+
+	// Then compute F for these couples
+	// svd(A_final, U_final, S_final, Vt_final);
+	// cout << "S finale" << S_final << endl;
+	// bestF(0, 0) = Vt_final.getRow(7)[0];
+	// bestF(0, 1) = Vt_final.getRow(7)[1];
+	// bestF(0, 2) = Vt_final.getRow(7)[2];
+	// bestF(1, 0) = Vt_final.getRow(7)[3];
+	// bestF(1, 1) = Vt_final.getRow(7)[4];
+	// bestF(1, 2) = Vt_final.getRow(7)[5];
+	// bestF(2, 0) = Vt_final.getRow(7)[6];
+	// bestF(2, 1) = Vt_final.getRow(7)[7];
+	// bestF(2, 2) = Vt_final.getRow(7)[8];
+	// bestF = N*bestF*N;
+
 	return bestF;
 }
 
@@ -171,12 +220,38 @@ void				displayEpipolar(Image<Color> I1,
 									Image<Color> I2,
 									const FMatrix<float,3,3>& F)
 {
+	int				w = I1.width();
+	int				active_image;
+	FVector<float, 3>	u;
+	FVector<float, 3>	x1;
+	FVector<float, 3>	x2;
+
 	while(true)
 	{
 		int x,y;
-		if(getMouse(x,y) == 3)
+		if (getMouse(x, y) == 3)
 			break;
-		// --------------- TODO ------------
+		else
+		{
+			// --------------- TODO ------------
+			active_image = (x < w) ? 0 : 1;
+			cout << "Clic gauche dans : " << active_image << endl;
+
+			drawCircle(x, y, 3, RED, 2);
+			u[0] = x - w;
+			u[1] = y;
+			u[2] = 1;
+			u = F * u;
+			x1[0] = -u[2];
+			x1[1] = 0;
+			x1[2] = u[0];
+			x1 = x1 / x1[2];
+			x2[0] = -u[1] * w - u[2];
+			x2[1] = u[0]*w;
+			x2[2] = u[0];
+			x2 = x2 / x2[2];
+			drawLine(x1[0], x1[1], x2[0], x2[1], RED);
+		}
 	}
 }
 
@@ -196,7 +271,7 @@ int 				main(int argc, char* argv[])
 		return 1;
 	}
 	int w = I1.width();
-	openWindow(2*w, I1.height());
+	openWindow(2 * w, I1.height());
 	display(I1, 0, 0);
 	display(I2, w, 0);
 
@@ -210,22 +285,21 @@ int 				main(int argc, char* argv[])
 	FMatrix<float,3,3> F = computeF(matches);
 	cout << "F = "<< endl << F;
 
-	// // Redisplay with matches
-	// display(I1,0,0);
-	// display(I2,w,0);
-	// for(size_t i = 0; i<matches.size(); i++)
-	// {
-	// 	Color c(rand()%256, rand()%256, rand()%256);
-	// 	fillCircle(matches[i].x1 + 0, matches[i].y1, 2, c);
-	// 	fillCircle(matches[i].x2 + w, matches[i].y2, 2, c);
-	// }
-	// click();
-	//
-	// // Redisplay without SIFT points
-	// display(I1,0,0);
-	// display(I2,w,0);
-	// displayEpipolar(I1, I2, F);
-	//
+	// Redisplay with matches
+	display(I1, 0, 0);
+	display(I2, w, 0);
+	for(size_t i = 0; i<matches.size(); i++)
+	{
+		Color c(rand()%256, rand()%256, rand()%256);
+		fillCircle(matches[i].x1 + 0, matches[i].y1, 2, c);
+		fillCircle(matches[i].x2 + w, matches[i].y2, 2, c);
+	}
+	click();
+
+	// Redisplay without SIFT points
+	display(I1, 0, 0);
+	display(I2, w, 0);
+	displayEpipolar(I1, I2, F);
 
 	// Wait for user's right click
 	cout << "\033[1;32m";
