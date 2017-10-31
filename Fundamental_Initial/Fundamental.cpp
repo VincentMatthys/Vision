@@ -235,22 +235,34 @@ void				displayEpipolar(Image<Color> I1,
 		{
 			// --------------- TODO ------------
 			active_image = (x < w) ? 0 : 1;
-			cout << "Clic gauche dans : " << active_image << endl;
 
 			drawCircle(x, y, 3, RED, 2);
-			u[0] = x - w;
+			u[0] = x - active_image * w;
 			u[1] = y;
 			u[2] = 1;
-			u = F * u;
+			if (active_image == 1)
+			// Draw the left epipolar line if clic in I2
+				u = F * u;
+			// Or draw the right epipolar line if clic in I1
+			else
+				u = transpose(F) * u;
+			// Find intersection points with images edges
 			x1[0] = -u[2];
 			x1[1] = 0;
 			x1[2] = u[0];
-			x1 = x1 / x1[2];
 			x2[0] = -u[1] * w - u[2];
-			x2[1] = u[0]*w;
+			x2[1] = u[0] * w;
 			x2[2] = u[0];
+
+			// Homogeneous coordinates
+			x1 = x1 / x1[2];
 			x2 = x2 / x2[2];
-			drawLine(x1[0], x1[1], x2[0], x2[1], RED);
+			// Draw the corersponding epipolar line
+			// With the w shift for the right epipolar line
+			if (active_image == 0)
+				drawLine(x1[0] + w, x1[1], x2[0] + w, x2[1], BLACK);
+			else
+				drawLine(x1[0], x1[1], x2[0], x2[1], RED);
 		}
 	}
 }
