@@ -84,6 +84,7 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 	while (Niter--)
 	{
 		current_Inliers.clear();
+
 		// Take arbitrary 8 couples (p, p') from matches
 		for(size_t i = 0; i < 4; i++)
 		{
@@ -110,19 +111,14 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 		FVector<double, 9> S;
 		FMatrix<double, 9, 9> U, Vt;
 		svd(A, U, S, Vt);
-		// cout << "SVD check 1: "  << norm(A-U*Diagonal(S)*Vt) << endl;
-		// Get the 8th right singular vectors, i.e : the 8th line of Vt.
-		// cout << Vt.getRow(7) << endl;
+
 		current_F(0, 0) = Vt.getRow(7)[0]; current_F(0, 1) = Vt.getRow(7)[1]; current_F(0, 2) = Vt.getRow(7)[2];
 		current_F(1, 0) = Vt.getRow(7)[3]; current_F(1, 1) = Vt.getRow(7)[4]; current_F(1, 2) = Vt.getRow(7)[5];
 		current_F(2, 0) = Vt.getRow(7)[6]; current_F(2, 1) = Vt.getRow(7)[7]; current_F(2, 2) = Vt.getRow(7)[8];
 
-		// cout << "Before renormalization" << endl;
-		// cout << current_F << endl;
 		current_F = N*current_F*N;
-		// cout << current_F << endl;
-		cout << "F=\033[1;31m\n" << current_F << endl;
-		cout << "\033[0m" << endl;
+		// cout << "--------------------------------" << endl;
+		// cout << "F=\033[1;31m\n" << current_F << "\033[0m" << endl;
 
 		// Count the number of inliers
 		current_all_inliers.clear();
@@ -139,27 +135,27 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 			x_prime = current_F*x_prime;
 			distance = (x*x_prime)*(x*x_prime) / norm2(x_prime);
 			// cout << "Distance" << distance << endl;
-			if (distance <= 0.005)
+			if (distance <= 0.01)
 				current_all_inliers.push_back(i);
 		}
-		cout <<  "Number of inliers at Niter :";
-		cout << Niter << "      ->     \033[1;34m"	;
-		cout << current_all_inliers.size() << endl;
-		cout << "\033[0m" << endl;
+
+		// cout <<  "Number of inliers at Niter :";
+		// cout << Niter << "      ->     \033[1;34m"	;
+		// cout << current_all_inliers.size() << endl;
+		// cout << "\033[0m" << endl;
+
+
 		// If more outliers than before, keep it, else, repeat the loop
 		if (current_all_inliers.size() > bestInliers.size())
 		{
 			bestInliers = current_all_inliers;
-			Niter = min((int)(std::log(BETA) / std::log(1 - (float)pow(((float)bestInliers.size() / matches.size()), 8))), Niter);
-			// cout << "New Niter  --- " << Niter << endl;
-			// cout << std::log(1 - pow(((float)bestInliers.size() / matches.size()), 8)) << endl ;
+			bestF = current_F;
+			// Reestimate the Niter (which is then lower than the previous one)
+			Niter = min((int)(std::log(BETA) / std::log(1 - pow(((float)bestInliers.size() / matches.size()), 8))), 10000);
+
 		}
-		// Reestimate the Niter (which is then lower than the previous one)
+		// cout << std::log(1 - pow(((float)bestInliers.size() / matches.size()), 8)) << endl ;
 	}
-
-	// DO NOT FORGET NORMALIZATION OF POINTS
-
-
 
 	// Updating matches with inliers only
 	vector<Match> all=matches;
@@ -212,7 +208,7 @@ int 				main(int argc, char* argv[])
 
 
 	FMatrix<float,3,3> F = computeF(matches);
-	// cout << "F = "<< endl << F;
+	cout << "F = "<< endl << F;
 
 	// // Redisplay with matches
 	// display(I1,0,0);
