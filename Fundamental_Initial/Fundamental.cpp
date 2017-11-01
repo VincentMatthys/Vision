@@ -119,15 +119,11 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 		current_F(2, 0) = Vt.getRow(7)[6]; current_F(2, 1) = Vt.getRow(7)[7]; current_F(2, 2) = Vt.getRow(7)[8];
 
 		current_F = N*current_F*N;
-		// cout << "--------------------------------" << endl;
-		// cout << "F=\033[1;31m\n" << current_F << "\033[0m" << endl;
 
 		// Count the number of inliers
 		current_all_inliers.clear();
 		for(size_t i = 0; i < matches.size(); i++)
 		{
-			// x = {matches[i].x1, matches[i].y1};
-			// x_prime = {matches[i].x2, matches[i].y2};
 			x[0] = matches[i].x1;
 			x[1] = matches[i].y1;
 			x[2] = 1;
@@ -136,7 +132,7 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 			x_prime[2] = 1;
 			x_prime = current_F*x_prime;
 			distance = (x*x_prime)*(x*x_prime) / norm2(x_prime);
-			if (distance <= 0.01)
+			if (distance <= 0.000001)
 				current_all_inliers.push_back(i);
 		}
 
@@ -168,11 +164,8 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 	// Refine resulting F with least square minimization based on all inliers
 	// Number of total inliers
 	count = matches.size();
-	Matrix<double> A_final(count, 9);
+	Matrix<double> A_final(count, 8);
 	Vector<double> B(count);
-	// Vector<double> S_final(count);
-	// FMatrix<double, 9, 9> Vt_final;
-	// Matrix<double> U_final(count, count);
 	while (count--)
 	{
 		// Fill A with the equation associated to the corerspondance
@@ -185,32 +178,32 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 		A_final(count, 5) = 0.001 * matches[count].y1;
 		A_final(count, 6) = 0.001 * matches[count].x2;
 		A_final(count, 7) = 0.001 * matches[count].y2;
-		A_final(count, 8) = 1;
-		B[count] = 0;
+		// A_final(count, 8) = 1;
+		B[count] = -1;
 	}
-	cout << "A_final = " << A_final << endl;
-	cout << "B = " << B << endl;
+	// cout << "A_final = " << A_final << endl;
+	// cout << "B = " << B << endl;
 	B = linSolve(A_final, B);
 	cout << "Final version" << B << endl;
-	// bestF(0, 0) = B[0]; bestF(0, 1) = B[1]; bestF(0, 2) = B[2];
-	// bestF(1, 0) = B[3]; bestF(1, 1) = B[4]; bestF(1, 2) = B[5];
-	// bestF(2, 0) = B[6]; bestF(2, 1) = B[7]; bestF(2, 2) = B[8];
+	bestF(0, 0) = B[0]; bestF(0, 1) = B[1]; bestF(0, 2) = B[2];
+	bestF(1, 0) = B[3]; bestF(1, 1) = B[4]; bestF(1, 2) = B[5];
+	bestF(2, 0) = B[6]; bestF(2, 1) = B[7]; bestF(2, 2) = 1;
 	// bestF = N*bestF*N;
 
-	// Then compute F for these couples
-	// svd(A_final, U_final, S_final, Vt_final);
-	// cout << "S finale" << S_final << endl;
-	// bestF(0, 0) = Vt_final.getRow(7)[0];
-	// bestF(0, 1) = Vt_final.getRow(7)[1];
-	// bestF(0, 2) = Vt_final.getRow(7)[2];
-	// bestF(1, 0) = Vt_final.getRow(7)[3];
-	// bestF(1, 1) = Vt_final.getRow(7)[4];
-	// bestF(1, 2) = Vt_final.getRow(7)[5];
-	// bestF(2, 0) = Vt_final.getRow(7)[6];
-	// bestF(2, 1) = Vt_final.getRow(7)[7];
-	// bestF(2, 2) = Vt_final.getRow(7)[8];
-	// bestF = N*bestF*N;
+	// Put last singular value to 0 and recompose
+	// Matrix for SVD decomposition
+	FVector<float, 3> S_f;
+	FMatrix<float, 3, 3> U_f, Vt_f;
+	svd(bestF, U_f, S_f, Vt_f);
+	cout << "SVD decomposition : S_f = " << S_f << endl;
+	S_f[2] = 0;
+	bestF = U_f*Diagonal(S_f)*Vt_f;
+	bestF = N*bestF*N;
 
+	// bestF = bestF / norm2(bestF);
+
+
+	// cout << "Norme de F : " << norm2(bestF) << endl;
 	return bestF;
 }
 
