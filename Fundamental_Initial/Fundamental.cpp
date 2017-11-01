@@ -67,7 +67,7 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 	// Vector of current inliers
 	vector<Match> 			current_Inliers;
 	vector<int>				current_all_inliers;
-	// counter for loops
+	// Counter for loops
 	size_t					count;
 	// Current Fundamental Matrix
 	FMatrix<float, 3, 3>	current_F;
@@ -132,15 +132,10 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 			x_prime[2] = 1;
 			x_prime = current_F*x_prime;
 			distance = (x*x_prime)*(x*x_prime) / norm2(x_prime);
-			if (distance <= 0.000001)
+			// Test for beeing inlier
+			if (distance <= 0.00001)
 				current_all_inliers.push_back(i);
 		}
-
-		// cout <<  "Number of inliers at Niter :";
-		// cout << Niter << "      ->     \033[1;34m"	;
-		// cout << current_all_inliers.size() << endl;
-		// cout << "\033[0m" << endl;
-
 
 		// If more outliers than before, keep it, else, repeat the loop
 		if (current_all_inliers.size() > bestInliers.size())
@@ -149,7 +144,6 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 			bestF = current_F;
 			// Reestimate the Niter (which is then lower than the previous one)
 			Niter = min((int)(std::log(BETA) / std::log(1 - pow(((float)bestInliers.size() / matches.size()), 8))), 10000);
-
 		}
 		count++;
 	}
@@ -178,17 +172,12 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 		A_final(count, 5) = 0.001 * matches[count].y1;
 		A_final(count, 6) = 0.001 * matches[count].x2;
 		A_final(count, 7) = 0.001 * matches[count].y2;
-		// A_final(count, 8) = 1;
 		B[count] = -1;
 	}
-	// cout << "A_final = " << A_final << endl;
-	// cout << "B = " << B << endl;
 	B = linSolve(A_final, B);
-	cout << "Final version" << B << endl;
 	bestF(0, 0) = B[0]; bestF(0, 1) = B[1]; bestF(0, 2) = B[2];
 	bestF(1, 0) = B[3]; bestF(1, 1) = B[4]; bestF(1, 2) = B[5];
 	bestF(2, 0) = B[6]; bestF(2, 1) = B[7]; bestF(2, 2) = 1;
-	// bestF = N*bestF*N;
 
 	// Put last singular value to 0 and recompose
 	// Matrix for SVD decomposition
@@ -200,10 +189,6 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 	bestF = U_f*Diagonal(S_f)*Vt_f;
 	bestF = N*bestF*N;
 
-	// bestF = bestF / norm2(bestF);
-
-
-	// cout << "Norme de F : " << norm2(bestF) << endl;
 	return bestF;
 }
 
@@ -229,31 +214,38 @@ void				displayEpipolar(Image<Color> I1,
 			// --------------- TODO ------------
 			active_image = (x < w) ? 0 : 1;
 
-			drawCircle(x, y, 3, RED, 2);
+			// u : homogeneous coordinates of clicked point
 			u[0] = x - active_image * w;
 			u[1] = y;
 			u[2] = 1;
 			if (active_image == 1)
 			// Draw the left epipolar line if clic in I2
+			{
+				drawCircle(x, y, 3, RED, 2);
 				u = F * u;
+			}
 			// Or draw the right epipolar line if clic in I1
 			else
+			{
+				drawCircle(x, y, 3, YELLOW, 2);
 				u = transpose(F) * u;
+			}
 			// Find intersection points with images edges
+			// x1 : left edge
+			// x2 : right edge
 			x1[0] = -u[2];
 			x1[1] = 0;
 			x1[2] = u[0];
 			x2[0] = -u[1] * w - u[2];
 			x2[1] = u[0] * w;
 			x2[2] = u[0];
-
-			// Homogeneous coordinates
 			x1 = x1 / x1[2];
 			x2 = x2 / x2[2];
+
 			// Draw the corersponding epipolar line
 			// With the w shift for the right epipolar line
 			if (active_image == 0)
-				drawLine(x1[0] + w, x1[1], x2[0] + w, x2[1], BLACK);
+				drawLine(x1[0] + w, x1[1], x2[0] + w, x2[1], YELLOW);
 			else
 				drawLine(x1[0], x1[1], x2[0], x2[1], RED);
 		}
