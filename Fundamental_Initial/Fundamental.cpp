@@ -186,7 +186,6 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 	FVector<float, 3> S_f;
 	FMatrix<float, 3, 3> U_f, Vt_f;
 	svd(bestF, U_f, S_f, Vt_f);
-	cout << "SVD decomposition : S_f = " << S_f << endl;
 	S_f[2] = 0;
 	bestF = U_f*Diagonal(S_f)*Vt_f;
 	bestF = N*bestF*N;
@@ -287,6 +286,8 @@ int 				main(int argc, char* argv[])
 	// Redisplay with matches
 	display(I1, 0, 0);
 	display(I2, w, 0);
+	// Number of inliers matches
+	cout << "Number of inliers matches : " << matches.size() << endl;
 	for(size_t i = 0; i<matches.size(); i++)
 	{
 		Color c(rand()%256, rand()%256, rand()%256);
