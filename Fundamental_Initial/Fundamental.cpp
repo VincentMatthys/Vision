@@ -85,6 +85,8 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 	N(0, 0) = 0.001; N(0, 1) = 0; N(0, 2) = 0;
 	N(1, 0) = 0; N(1, 1) = 0.001; N(1, 2) = 0;
 	N(2, 0) = 0; N(2, 1) = 0; N(2, 2) = 1;
+
+	// RANSAC algorithm
 	// Do Niter iterations
 	count = 0;
 	while (count < Niter)
