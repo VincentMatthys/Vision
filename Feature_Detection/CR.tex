@@ -85,7 +85,7 @@ Enfin, l'\textit{adaptative non-maximal supression} agit comme attendu, gardant 
 		\( \sigma_i \) & 1                 & écart-type de la fenêtre gaussienne de lissage des images produits.                               \\\hline
 		\( \kappa\)    & 0.05              & constante multiplicative de la fonction de réponse                                                \\\hline
 		\( threshold\) & 0.01              & seuil global (en fonction de la réponse maximale) en deça duquel aucune réponse n'est considérée. \\\hline
-		\(local \)     & 3                 & délimite la fenêtre de recherche du maximum local                                                 \\\hline
+		\(local \)     & 3                 & délimite la fenêtre de recherche du maximum local  de taille (2local + 1 ) x (2local +1)          \\\hline
 		\(c \)         & 0.7               & seuillage au delà duquel le point est automatiquement détecté.                                    \\\hline
 		\( b\)         & 50                & nombre de détections souhaité.                                                                    \\\hline
 	\end{tabular}
@@ -127,6 +127,50 @@ L'influence de \(\kappa\) est illustrée en figure~\ref{fig_2_kappa}, où le dé
 	\includegraphics[width = 1.0\textwidth]{2_cameraman_kappa}
 	\caption{Influence de \(\kappa\) sur les détections, effectuées sans \textit{anms}}
 	\label{fig_2_kappa}
+\end{figure}
+
+\subsection{Influence du \(threshold\)}
+
+L'influence de \(threshold\) est illustrée en figure~\ref{fig_2_threshold}, où le détecteur a été utlisé sur l'image Cameraman sans \textit{anms}. On rappelle que le seuil établi est en fonction de la réponse maximale. Ainsi, pour \(threshold = 0\), toutes les détections sont observées, du moins celles qui sont maximales dans un voisinage déterminé par \(local\). Le nombre de détection diminue donc logiquement avec \(threshold \in [0, 1]\), et au fur et à mesure ne sont conservées que les détections les plus importantes relativement à la détection de réponse maximale.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 1.0\textwidth]{2_cameraman_threshold}
+	\caption{Influence de \(threshold\) sur les détections, effectuées sans \textit{anms}}
+	\label{fig_2_threshold}
+\end{figure}
+
+\subsection{Influence de \(local\), largeur de la fenêtre de calcul des maxima de réponse}
+
+L'influence de \(local\) est illustrée en figure~\ref{fig_2_threshold}, où le détecteur a été utlisé sur l'image Cameraman sans \textit{anms}. Pour \(local = 0\), on garde toutes les réponses \(> threshold \cdot max_{p \in \Omega}(response(p))\). Plus \(local\) augmente, moins on garde de réponses locales, ne consevant que la réponse maximale dans la fenétre de demi-largeur \(local\). On a choisit arbitrairement une valeur par défaut à 3, à mi-chemin entre la conservation de tous les maxima et la conservation de rares maxima très espacés. Il est à noté que cette taille permet également à l'\textit{anms} d'éliminer les réponses dans la fenêtre choisie.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 1.0\textwidth]{2_cameraman_local}
+	\caption{Influence de \(local\) sur les détections, effectuées sans \textit{anms}}
+	\label{fig_2_local}
+\end{figure}
+
+\subsection{Influence de c}
+
+La valeur de \(c\) quantifie le degré de suppression des maxima locaux. Plus \(c\) est petit, plus les points à considérer dans l'anms doivent être petits devant les valeurs déjà retenues. A l'inverse, plus \(c\) se rapproche de 1, moins on enlève de points proches des maximas locaux. L'influence de \(c\) est illustrée en figure~\ref{fig_2_c}, où le détecteur a été utlisé sur l'image Cameraman avec \textit{anms}. Il est intéressant de noter que l'augmentation de \(c\) conduit à un support spatial des détection élargi, reflétant cette relaxation dans la prise en compte de maxmima locaux. Localement, on peut même noter plus globalement que l'augmentation de \(c\) conduit à une modification de la représentaton spatiale des détections.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 1.0\textwidth]{2_cameraman_c}
+	\caption{Influence de \(c\) sur les détections, effectuées avec \textit{anms}}
+	\label{fig_2_c}
+\end{figure}
+
+\subsection{Influence de b, nombre de détections souhaitées}
+
+L'influence de \(b\) est illustrée en figure~\ref{fig_2_b}, où le détecteur a été utlisé sur l'image Cameraman avec \textit{anms}. Cette figure permet de comprendre l'ordre de sélection des maxima suivant l'algorithme d'\textit{anms}. Ainsi, il semble
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 1.0\textwidth]{2_cameraman_b}
+	\caption{Influence de \(b\) sur les détections, effectuées avec \textit{anms}}
+	\label{fig_2_b}
 \end{figure}
 
 \end{document}

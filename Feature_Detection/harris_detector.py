@@ -58,9 +58,9 @@ def first_refine(Corner_response_Mc, threshold, local):
 		else:
 			detected_points[i, j] = 0
 	detected_points[:local, :].fill(0)
-	detected_points[-local:, :].fill(0)
+	detected_points[-max(1, local):, :].fill(0)
 	detected_points[:, :local].fill(0)
-	detected_points[:, -local:].fill(0)
+	detected_points[:, -max(1, local):].fill(0)
 	return detected_points
 
 def find_harris_corners(img, sigma_d, sigma_i, kappa, threshold, local):
@@ -103,7 +103,7 @@ def find_harris_corners(img, sigma_d, sigma_i, kappa, threshold, local):
 
 	return first_refine(Corner_response_Mc, threshold, local)
 
-def anms(detected_points, best):
+def anms(detected_points, best, c):
 	"""
 	Adaptative non-maximal suppresion algorithm to refine detectors.
 	"""
@@ -119,7 +119,6 @@ def anms(detected_points, best):
 	## Radius
 	r = np.inf
 	R = [np.inf]
-
 
 	# Initialises m : maximal value of remaining detected points
 	m = D.max()
@@ -204,7 +203,7 @@ if __name__ == "__main__":
 									)
 
 	if args.anms == True:
-		refined_corners = anms(corners, args.best)
+		refined_corners = anms(corners, args.best, args.anms_constant)
 	else:
 		refined_corners = np.argwhere(corners > 0)
 
