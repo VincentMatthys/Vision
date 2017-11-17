@@ -142,7 +142,7 @@ L'influence de \(threshold\) est illustrée en figure~\ref{fig_2_threshold}, où
 
 \subsection{Influence de \(local\), largeur de la fenêtre de calcul des maxima de réponse}
 
-L'influence de \(local\) est illustrée en figure~\ref{fig_2_threshold}, où le détecteur a été utlisé sur l'image Cameraman sans \textit{anms}. Pour \(local = 0\), on garde toutes les réponses \(> threshold \cdot max_{p \in \Omega}(response(p))\). Plus \(local\) augmente, moins on garde de réponses locales, ne consevant que la réponse maximale dans la fenétre de demi-largeur \(local\). On a choisit arbitrairement une valeur par défaut à 3, à mi-chemin entre la conservation de tous les maxima et la conservation de rares maxima très espacés. Il est à noté que cette taille permet également à l'\textit{anms} d'éliminer les réponses dans la fenêtre choisie.
+L'influence de \(local\) est illustrée en figure~\ref{fig_2_threshold}, où le détecteur a été utlisé sur l'image Cameraman sans \textit{anms}. Pour \(local = 0\), on garde toutes les réponses \(> threshold \cdot \max_{p \in \Omega}(resp(p))\). Plus \(local\) augmente, moins on garde de réponses locales, ne consevant que la réponse maximale dans la fenétre de demi-largeur \(local\). On a choisit arbitrairement une valeur par défaut à 3, à mi-chemin entre la conservation de tous les maxima et la conservation de rares maxima très espacés. Il est à noté que cette taille permet également à l'\textit{anms} d'éliminer les réponses dans la fenêtre choisie.
 
 \begin{figure}[H]
 	\centering
@@ -164,13 +164,64 @@ La valeur de \(c\) quantifie le degré de suppression des maxima locaux. Plus \(
 
 \subsection{Influence de b, nombre de détections souhaitées}
 
-L'influence de \(b\) est illustrée en figure~\ref{fig_2_b}, où le détecteur a été utlisé sur l'image Cameraman avec \textit{anms}. Cette figure permet de comprendre l'ordre de sélection des maxima suivant l'algorithme d'\textit{anms}. Ainsi, il semble
+L'influence de \(b\) est illustrée en figure~\ref{fig_2_b}, où le détecteur a été utlisé sur l'image Cameraman avec \textit{anms}.  Ainsi, l'apparition de chaque détection dans cette image permet de déterminer l'importante relative de chaque détection. On en déduit que le cameraman en lui même est la source d'origine la plus importante et que la deuxième source est le trépied avec l'appareil photo.
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width = 1.0\textwidth]{2_cameraman_b}
 	\caption{Influence de \(b\) sur les détections, effectuées avec \textit{anms}}
 	\label{fig_2_b}
+\end{figure}
+
+\section{Sensibilité aux transformations géométriques}
+
+Dans les expériences qui suivent, on cherche à montrer l'invariance du détecteur fourni aux rotations, au bruit et au changement d'échelle. Pour ce faire, on utilisera une même image de référence, Cameraman ou Lena, à laquelle on fera subir des rotations d'angle différents, ou à laquelle on ajoutera artificiellement du bruit, ou enfin à laquelle on fera subir des changement d'échelle. Sauf mention contraire, on considère que les paramètres utilisés sont ceux par défaut, établis en table~\ref{table_1}.
+
+
+\subsection{Aux rotations}
+
+La sensibilité aux rotations est illustrée en figure~\ref{fig_3_rot_lena_raw} où le détecteur a été utilisé sur l'image Lena ayant subi une rotation d'un angle \(\theta \in [0, 210]\), sans \textit{anms}. Il faut noter une invariance relative de \( \pm 15^{\circ}\pmod{\frac{\pi}{2}}\) des détections. On peut constater notamment que les produits images pour des rotations de l'ordre de \( \pm \frac{\pi}{4}\pmod{\frac{\pi}{2}}\) ont des réponses sensiblement différentes, et c'est attendu vu la direction de calcul du gradient par rapport à l'orientation de la zone actuelle, résultant en une projection sur chaque composante de l'image produit.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[height = 0.9\textheight]{3_lena_raw}
+	\caption{Sensibilité aux rotations des détections, effectuées sans \textit{anms}}
+	\label{fig_3_rot_lena_raw}
+\end{figure}
+
+\subsection{Au bruit}
+
+La sensibilité au bruit est illustrée en figure~\ref{fig_3_noise_cameraman_raw} où le détecteur a été utilisé sur l'image Cameraman sans \textit{anms}, image à laquelle a été rajouté un bruit gaussian de moyenne nulle et d´écart-type \(\sigma_n \in [0, 80]\). On rappelle que l'image est encodée sur 256 niveau de gris. On constate que le nombre de détection, ainsi que leur position, restent très similaires, jusqu'à \(\sigma_n = 80\) : le détecteur conçu est donc robuste à l'ajout de bruit blanc.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 0.9\textwidth]{3_cameraman_raw}
+	\caption{Sensibilité au bruit des détections, effectuées sans \textit{anms}}
+	\label{fig_3_noise_cameraman_raw}
+\end{figure}
+
+
+\subsection{Au changement d'échelle}
+
+La robustesse aux changement d'échelle a été mesurée qualitativement en figure~\ref{fig_3_rescale} où le détecteur a été utilisé sur l'image Lena sans \textit{anms}, pour différentes échelles simulées, de \(0.5\) à \(4.5\). On constate une grande disparité sur le nombre de détections effectuées, qui présente un maximum, dans le cas étudié, pour une image aggrandie 2 fois, avec \(139\) détections, alors qu'on partait de 30 détections pour le facteur \(0.5\) et qu'on en détecte pratiquement autant pour un facteur \(4.5\).
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 0.9\textwidth]{3_lena_rescale_raw}
+	\caption{Sensibilité au bruit des détections, effectuées sans \textit{anms}}
+	\label{fig_3_rescale}
+\end{figure}
+
+
+\section{Changement de point de vue}
+
+LLe détecteur a été utilisé sur une série d'images toutes issues d'une même scène, mais à laquelle on a appliqué différentes homographies générées aléatoirement.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 0.9\textwidth]{4_views_raw}
+	\caption{Sensibilité au changement des détections du point de vue de l'image, vis-à-vis de ce dernniers,
 \end{figure}
 
 \end{document}
