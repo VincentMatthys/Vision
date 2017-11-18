@@ -24,7 +24,7 @@
 	\vspace{1.5cm}
 \end{center}
 
-Ce projet consiste en un développement dans l'élaborateur d'un détecteur de coins d'Harris, ainsi que d'un rafinement des détections par \textit{adaptive non-maximal suppression}. Le rapport qui suit regroupe différentes observations quand à son utilisation sur différentes images, avec différents paramètres et dans des conditions différentes, ceci dans un soucis d'évaluation qualitative du progamme délivré.
+Ce projet consiste en un développement dans l'élaborateur d'un détecteur de coins d'Harris, ainsi que d'un rafinement des détections par \textit{adaptive non-maximal suppression} (anms). Le rapport qui suit regroupe différentes observations quand à son utilisation sur différentes images, avec différents paramètres et dans des conditions différentes, ceci dans un soucis d'évaluation qualitative du progamme délivré.
 
 \tableofcontents
 \section{Différentes scènes}
@@ -95,7 +95,7 @@ Enfin, l'\textit{adaptative non-maximal supression} agit comme attendu, gardant 
 
 Les expériences suivantes ont pour but d'étudier l'influence de chaque paramètre sur les détections. Aussi, les paramètres, sauf si précisés, seront ceux par défaut, présentés en table~\ref{table_1}.
 
-\subsection{Influence de \(\sigma_d\)}
+\subsection{Influence de \(\sigma_d\) : paramètre pour le calcul des dérivées}
 
 L'influence de \(\sigma_d\) est illustrée en figure~\ref{fig_2_sigma_d}, où le détecteur a été utlisé sur l'image Cameraman sans \textit{anms}. On s'apperçoit d'une part que le nombre de détection diminue puis augmente avec \(\sigma_d\). La diminution est due à l'élargissement de la zone sur laquelle la dérivée est calculée. L'image étant majoritairement constante par morceaux, une augmentation de \(\sigma_d\) entraîne une diminution des variations sur la fenêtre de calcul. A l'inverse, si \(\sigma_d\) est trop élevé, les effets de bords prennent le dessus, et le détecteur calcule une dérivée entre une partie de l'image, non noire, et une autre partie de l'image, complétée par 0-padding.
 Il est surtout intéressant de noter la répartition de la disparition des détections le long des bords et coins fins de l'image, comme la face de la caméra, le manche, et les bords du trépied, entre \(\sigma_d = 1\) et \(\sigma_d = 5\).
@@ -107,7 +107,7 @@ Il est surtout intéressant de noter la répartition de la disparition des déte
 	\label{fig_2_sigma_d}
 \end{figure}
 
-\subsection{Influence de \(\sigma_i\)}
+\subsection{Influence de \(\sigma_i\) : paramêtre du noyau gaussien d'intégration}
 
 L'influence de \(\sigma_i\) est illustrée en figure~\ref{fig_2_sigma_i}, où le détecteur a été utlisé sur l'image Cameraman sans \textit{anms}. Les observations et les conclusions sont les mêmes que pour \(\sigma_d\), si ce n'est que l'échelle de validité de \(\sigma_i\) est raccourcie : après \(\sigma_i = 5\), on semble perd d'informations.
 
@@ -118,7 +118,7 @@ L'influence de \(\sigma_i\) est illustrée en figure~\ref{fig_2_sigma_i}, où le
 	\label{fig_2_sigma_i}
 \end{figure}
 
-\subsection{Influence de \(\kappa\)}
+\subsection{Influence de \(\kappa\) : paramètre du calcul de la réponse}
 
 L'influence de \(\kappa\) est illustrée en figure~\ref{fig_2_kappa}, où le détecteur a été utlisé sur l'image Cameraman sans \textit{anms}. Théoriquement, \(\kappa\) est utilisé pour avoir une réponse positive si les deux valeurs propres de la matrix d'auto-corrélation sont "grandes". On constate que pour \(\kappa \in [0, 0.08]\), les détections ne changent ne varient ni en nombre, ni en localisation. Par contre après 0.08, les détections sont d'autant moins nombreuses que \(\kappa\) augmente, et disparaissent totalement après \(\kappa = 0.28\). Cette limite varie en fonction de l'image, contrairement à la première zone de relative stabilité. Il est donc raisonnable de travailler avec \(\kappa \in [0, 0.08]\) par défaut, et on prendre \(\kappa = 0.05 \) pour le reste des expériences.
 
@@ -173,6 +173,7 @@ L'influence de \(b\) est illustrée en figure~\ref{fig_2_b}, où le détecteur a
 	\label{fig_2_b}
 \end{figure}
 
+
 \section{Sensibilité aux transformations géométriques}
 
 Dans les expériences qui suivent, on cherche à montrer l'invariance du détecteur fourni aux rotations, au bruit et au changement d'échelle. Pour ce faire, on utilisera une même image de référence, Cameraman ou Lena, à laquelle on fera subir des rotations d'angle différents, ou à laquelle on ajoutera artificiellement du bruit, ou enfin à laquelle on fera subir des changement d'échelle. Sauf mention contraire, on considère que les paramètres utilisés sont ceux par défaut, établis en table~\ref{table_1}.
@@ -216,12 +217,28 @@ La robustesse aux changement d'échelle a été mesurée qualitativement en figu
 
 \section{Changement de point de vue}
 
-LLe détecteur a été utilisé sur une série d'images toutes issues d'une même scène, mais à laquelle on a appliqué différentes homographies générées aléatoirement.
+Le détecteur a été utilisé sur une série d'images toutes issues d'une même scène, mais à laquelle on a appliqué différentes homographies générées manuellement, simulant un changement de point de vue (rotation autour de l'axe \(Oy\)), et dont les matrices représentatives sont :
+\begin{equation}
+	\begin{pmatrix}
+		1          & 0 & 0 \\
+		0          & 1 & 0 \\
+		-10^{-4} k & 0 & 1
+	\end{pmatrix}
+	\quad \forall k \in [0, 8]
+	\label{eq_view}
+\end{equation}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width = 0.9\textwidth]{4_views_raw}
-	\caption{Sensibilité au changement des détections du point de vue de l'image, vis-à-vis de ce dernniers,
+	\includegraphics[width = 0.9\textwidth]{4_view}
+	\caption{Sensibilité à un changement de point de vue simulé en équation \eqref{eq_view} pour l'image Lena}
+	\label{fig_view}
 \end{figure}
+
+Les résultats sont présentés en figure~\ref{fig_view}, pour des paramètres du détecteurs par défaut, à l'exception de \(\sigma_i = 5 \), et \textit{anms} n'a pas été utilisé. On s'apperçoit que le nombre de détections diminue jusque \(k = 7\), mais que la position de la plupart des détections restante est retrouvée dans le cas \( k = 0\) initial. Les positions restantes étant dues à des effets de bords, ayant choisi de compléter l'image initiale par des 0 après application de l'homographie. En revanche, à partir de \(k = 8\), il y a une explosion de détections, qui est expliquée par une erreur numérique lors du calcul du déterminant de la matrice d'autosimilarité. C'est d'ailleurs pour cette raison que le paramètre \(\sigma_i\) a été changé pour cette expérience, puisque si laissé par défaut, ces erreurs numériques apparaissaient plus tôt. Le détecteur, même s'il perd en efficacité (22 points détectés contre 37 initialement), conserve la position des points initiaux.
+
+\section{Conclusion}
+
+Le détecteur proposé est fourni avec de nombreux paramètres, qu'il conviendra de modifier suivant les situations. Ainsi, avec les paramètres par défaut, on notera une invariance des détections aux petites rotations, au bruit même important, et aux changement de points de vue jusqu'à explosion numérique. Il conviendra d'augmenter \(\sigma_i \) pour gagner en robustesse mais le compromis sera alors fait sur le nombre de détection. On attire l'attention de l'utilisateur sur la méthode \textit{anms}, dont le nombre de détections souhaité est aussi paramétrable, qui permet automatiquement de gagner en robustesse dans le cas d'un \(\sigma_i \) moins élevé.
 
 \end{document}
