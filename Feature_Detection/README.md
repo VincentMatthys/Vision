@@ -52,4 +52,4 @@ optional arguments:
 
 # Example
 
-![images directory](images/Figure_readme) 
+![images directory](images/Figure_readme.png) 
