@@ -11,23 +11,6 @@ from scipy.signal import gaussian
 from scipy.signal import convolve2d
 
 import argparse
-################################################################################
-################################### Constants #################################
-
-# Constant associated with Harris corner detection
-kappa = 0.05
-sigma_d = 5
-sigma_i = 2
-
-# Local window for local minima
-local = 1
-
-# Threshold (in percentage of maximal value) for values to keep  after first step of cleaning
-threshold = 0.01
-
-# Constants associated with ANMS
-c = 0.9
-best = 100
 
 ################################################################################
 
@@ -36,6 +19,10 @@ def first_refine(Corner_response_Mc, threshold, local):
 	Reponse above threshold and local maximum (8 neighbors) => detection
 	1. Reponses below threshold * max are set to 0
 	2. Keep local maxima (in (2xlocal  + 1) x (2xlocal + 1) pixels)
+	:param Corner_response_Mc: matric of corners response (harris criterion)
+	:param threshold: Threshold under which corner is supposed to be 0
+	:param local: Width of the local window for local maxima computation
+	:return: first refined corners
 	"""
 	# Reponses below threshold * max are set to 0
 	Corner_response_Mc[Corner_response_Mc < threshold * Corner_response_Mc.max()] = 0
@@ -70,7 +57,7 @@ def find_harris_corners(img, sigma_d, sigma_i, kappa, threshold, local):
 	:param window_size: The size (side length) of the sliding window
 	:param k: Harris corner constant. Usually 0.04 - 0.06
 	:param thresh: The threshold above which a corner is counted
-	:return:
+	:return: refined corners as given by first_refine
 	"""
 	# Compute gaussian derivatives
 	dx = [-0.5, 0, 0.5]
@@ -106,6 +93,10 @@ def find_harris_corners(img, sigma_d, sigma_i, kappa, threshold, local):
 def anms(detected_points, best, c):
 	"""
 	Adaptative non-maximal suppresion algorithm to refine detectors.
+	:param detected_points: first refined corners
+	:param best: number of corners detection allowed
+	:param c: Threshold to validate absolutely a detection
+	:return: Second refined corners, by anms method
 	"""
 
 	# Matrix of remaining detected points
@@ -158,7 +149,7 @@ if __name__ == "__main__":
 						"--sigma_i",
 						type = int,
 						help = "Standard deviation for gaussian kernel used in windowing",
-						default = 2)
+						default = 1)
 	parser.add_argument("-k",
 						"--kappa",
 						type = float,
@@ -168,7 +159,7 @@ if __name__ == "__main__":
 						"--local",
 						type = int,
 						help = "Size of local window arround an extremum (2xlocal  + 1) x (2xlocal + 1) pixels)",
-						default = 1)
+						default = 3)
 	parser.add_argument("-t",
 						"--threshold",
 						type = int,
@@ -181,18 +172,28 @@ if __name__ == "__main__":
 						"--anms_constant",
 						type = int,
 						help = "Constant in ANMS",
-						default = 0.9)
+						default = 0.7)
 	parser.add_argument("-b",
 						"--best",
 						type = int,
 						help = "Best rankings in ANMS",
 						default = 50)
+	parser.add_argument("-s",
+						"--save",
+						type = str,
+						help = "Output file for corners locations",
+						default = None)
+	parser.add_argument("-p",
+						"--plot",
+						type = bool,
+						help = "Plot option",
+						default = False)
 
 	args = parser.parse_args()
 	print ("Parameters entered :\n", vars(args))
 
+	# Compte the Harris corners
 	img = imread(args.image)
-
 	corners = find_harris_corners(
 									img,
 									args.sigma_d,
@@ -203,18 +204,30 @@ if __name__ == "__main__":
 									)
 
 	if args.anms == True:
+		# Refine with anms
 		refined_corners = anms(corners, args.best, args.anms_constant)
+		print ("Number of corners detected before anms : {}".format(len(np.argwhere(corners > 0))))
+		print ("Number of corners detected after anms: {}".format(len(refined_corners)))
 	else:
 		refined_corners = np.argwhere(corners > 0)
+		print ("Number of corners detected : {}".format(len(refined_corners)))
 
-	plt.figure(figsize = (20, 20))
-	imshow(img);
-	plt.scatter(refined_corners[:, 1],
-			refined_corners[:, 0],
-			color = 'red',
-			s = 150)
-	plt.axis('off')
-	plt.savefig("images/1_" + args.image.split("/")[1].split(".")[0] + ".png")
-	plt.show()
+	if args.save:
+		# Save the corners locations in a txt file
+		np.savetxt(args.save,
+					refined_corners.astype(int),
+					delimiter = '\t',
+					fmt = '%d',
+					header = "{} Harris corners for "
+					"{}".format(len(refined_corners), args.image))
 
-	# np.save("test_py", corners)
+	if args.plot == True:
+		# Plot the figure
+		plt.figure(figsize = (20, 20))
+		imshow(img);
+		plt.scatter(refined_corners[:, 1],
+				refined_corners[:, 0],
+				color = 'red',
+				s = 150)
+		plt.axis('off')
+		plt.show()
