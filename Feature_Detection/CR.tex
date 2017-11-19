@@ -176,7 +176,7 @@ L'influence de \(b\) est illustrée en figure~\ref{fig_2_b}, où le détecteur a
 
 \section{Sensibilité aux transformations géométriques}
 
-Dans les expériences qui suivent, on cherche à montrer l'invariance du détecteur fourni aux rotations, au bruit et au changement d'échelle. Pour ce faire, on utilisera une même image de référence, Cameraman ou Lena, à laquelle on fera subir des rotations d'angle différents, ou à laquelle on ajoutera artificiellement du bruit, ou enfin à laquelle on fera subir des changement d'échelle. Sauf mention contraire, on considère que les paramètres utilisés sont ceux par défaut, établis en table~\ref{table_1}.
+Dans les expériences qui suivent, on cherche à montrer l'invariance du détecteur fourni aux rotations, au bruit et au changement d'échelle. Pour ce faire, on utilisera une même image de référence, Cameraman ou Lena, à laquelle on fera subir des rotations d'angle différents, ou à laquelle on ajoutera artificiellement du bruit, ou enfin à laquelle on fera subir des changements d'échelle. Sauf mention contraire, on considère que les paramètres utilisés sont ceux par défaut, établis en table~\ref{table_1}.
 
 
 \subsection{Aux rotations}
@@ -239,6 +239,6 @@ Les résultats sont présentés en figure~\ref{fig_view}, pour des paramètres d
 
 \section{Conclusion}
 
-Le détecteur proposé est fourni avec de nombreux paramètres, qu'il conviendra de modifier suivant les situations. Ainsi, avec les paramètres par défaut, on notera une invariance des détections aux petites rotations, au bruit même important, et aux changement de points de vue jusqu'à explosion numérique. Il conviendra d'augmenter \(\sigma_i \) pour gagner en robustesse mais le compromis sera alors fait sur le nombre de détection. On attire l'attention de l'utilisateur sur la méthode \textit{anms}, dont le nombre de détections souhaité est aussi paramétrable, qui permet automatiquement de gagner en robustesse dans le cas d'un \(\sigma_i \) moins élevé.
+Le détecteur proposé est fourni avec de nombreux paramètres, qu'il conviendra de modifier suivant les situations. Ainsi, avec les paramètres par défaut, on notera une invariance des détections aux petites rotations, au bruit même important, et aux changement de points de vue jusqu'à explosion numérique. Il conviendra d'augmenter \(\sigma_i \) pour gagner en robustesse mais le compromis sera alors fait sur le nombre de détections. On attire l'attention de l'utilisateur sur la méthode \textit{anms}, dont le nombre de détections souhaité est aussi paramétrable, qui permet automatiquement de gagner en robustesse dans le cas d'un \(\sigma_i \) moins élevé.
 
 \end{document}
