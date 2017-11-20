@@ -116,9 +116,9 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 		// Then compute F_tilda for these couples
 		svd(A, U, S, Vt);
 
-		current_F(0, 0) = Vt.getRow(7)[0]; current_F(0, 1) = Vt.getRow(7)[1]; current_F(0, 2) = Vt.getRow(7)[2];
-		current_F(1, 0) = Vt.getRow(7)[3]; current_F(1, 1) = Vt.getRow(7)[4]; current_F(1, 2) = Vt.getRow(7)[5];
-		current_F(2, 0) = Vt.getRow(7)[6]; current_F(2, 1) = Vt.getRow(7)[7]; current_F(2, 2) = Vt.getRow(7)[8];
+		current_F(0, 0) = Vt.getRow(8)[0]; current_F(0, 1) = Vt.getRow(8)[1]; current_F(0, 2) = Vt.getRow(8)[2];
+		current_F(1, 0) = Vt.getRow(8)[3]; current_F(1, 1) = Vt.getRow(8)[4]; current_F(1, 2) = Vt.getRow(8)[5];
+		current_F(2, 0) = Vt.getRow(8)[6]; current_F(2, 1) = Vt.getRow(8)[7]; current_F(2, 2) = Vt.getRow(8)[8];
 
 		current_F = N*current_F*N;
 
@@ -135,7 +135,7 @@ FMatrix<float,3,3>	computeF(vector<Match>& matches)
 			x_prime = current_F*x_prime;
 			distance = (x*x_prime)*(x*x_prime) / norm2(x_prime);
 			// Test for beeing inlier
-			if (distance <= 0.00001)
+			if (distance <= 1)
 				current_all_inliers.push_back(i);
 		}
 
