@@ -1,0 +1,57 @@
+\documentclass[12pt,a4paper,onecolumn]{article}
+\input{packages}
+\input{macros}
+
+% ------------------------ General informations --------------------------------
+\title{3D Computer Vision 2017/2018}
+\author{Vincent Matthys}
+\graphicspath{{images/}}
+% ------------------------------------------------------------------------------
+
+\begin{document}
+\begin{tabularx}{0.8\textwidth}{@{} l X r @{} }
+	{\textsc{Master MVA}}       &  & \textsc{Rapport expérimental} \\
+	\textsc{3D Computer Vision} &  & {Vincent Matthys}             \\
+\end{tabularx}
+\vspace{1.5cm}
+\begin{center}
+	\rule[11pt]{5cm}{0.5pt}
+
+	\textbf{\LARGE \textsc{Carte de disparité par expansion de graines}}
+	\vspace{0.5cm}\\
+	Vincent Matthys\\
+	\rule{5cm}{0.5pt}
+	\vspace{1.5cm}
+\end{center}
+
+Ce projet consiste dans le développement du calcul de la carte de disparité par méthode locale avec une distance de validation croisée normalisée. La méthode par \textit{seed expansion} permet de limiter le nombre de disparité recherchées à \(\pm 1\) à partir des graînes déterminées.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 0.9\textwidth]{img1}
+	\caption{Vue gauche de l'image}
+	\label{fig_left_view}
+\end{figure}
+
+En figure~\ref{fig_left_view} est présentée l'image gauche de la scène de départ. A partir de celle-ci, et de l'image de droite rectifiée, on ne retient que les pixels pour qui le patch centré en ce pixel sur l'image de gauche, et le même patch décalé sur l'horizontal, de largeur \(win = 4\) par défaut présente une corrélation croisée normalisée supérieure à \(nccSeed = 0.95\). La disparité, comprise entre \(dMin = -30 \) et \(dMax = -7\) pour laquelle cette corrélation est maximale est la disparité conservée en ce pixel, et qui sert à la prochaine étape d'expansion. Cette carte de disparité initiale est présentée en figure~\refeq{fig_seeds} et représente les meilleurs correspondances entre les deux images.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 0.9\textwidth]{seeds}
+	\caption{Graines sélectionnées}
+	\label{fig_seeds}
+\end{figure}
+
+Enfin, on étend ces graînes en recherchant, pour les voisins de ces meilleurs correspondances, dans une fourchette de \(\pm1\) les disparités donnant la meilleure validation croisée normalisée. La carte de disparité finale est présentée en figure~\refeq{fig_expansion}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 0.9\textwidth]{expansion}
+	\caption{Expansion des graines}
+	\label{fig_expansion}
+\end{figure}
+
+Un résultat peut-être visualisé en \(3D\) à la fin du programme.
+
+
+\end{document}
