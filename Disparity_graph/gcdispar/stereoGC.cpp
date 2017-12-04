@@ -132,7 +132,7 @@ int main()
 	///// Set parameters
 	cout << "Setting parameters... " << flush;
 	// Generic parameters
-	int zoom = 10;      // Zoom factor (to speedup computations)
+	int zoom = 2;      // Zoom factor (to speedup computations)
 	int n = 3;         // Consider correlation patches of size (2n+1)*(2n+1)
 	float lambdaf = 0.1; // Weight of regularization (smoothing) term
 	int wcc = max(1 + int(1 / lambdaf), 20); // Energy discretization precision [as we build a graph with 'int' weights]
@@ -213,36 +213,36 @@ int main()
 				// data_term += 5 * Kp;
 				if (cur_d > 0)
 				{
-					G.add_edge(	(cur_d - 1) * nx * ny + x * ny + y,
-								cur_d * nx * ny + x * ny + y,
+					G.add_edge(	(cur_d - 1) * nx * ny + y * nx + x,
+								cur_d * nx * ny + y * nx + x,
 								data_term,
 								INF);
 				}
 				else if (cur_d == 0)
 				{
-					G.add_tweights(	x * ny + y,
-									data_term,
-									INF);
-				}
-				if (cur_d == nd - 1)
-				{
-					G.add_tweights(	(nd - 1) * nx * ny + x * ny + y,
+					G.add_tweights(	y * nx + x,
 									INF,
 									data_term);
 				}
-				// Add south connection if possible
-				if (y < ny - 1)
+				if (cur_d == nd - 1)
 				{
-					G.add_edge(	cur_d * nx * ny + x * ny + y,
-								cur_d * nx * ny + x * ny + y + 1,
+					G.add_tweights(	(nd - 1) * nx * ny + y * nx + x,
+									data_term,
+									INF);
+				}
+				// Add south connection if possible
+				if (x < nx - 1)
+				{
+					G.add_edge(	cur_d * nx * ny + y * nx + x,
+								cur_d * nx * ny + y * nx + x + 1,
 								lambda,
 								lambda);
 				}
 				// Add east connection if possible
-				if (x < nx - 1)
+				if (y < ny - 1)
 				{
-					G.add_edge(	cur_d * nx * ny +  x * ny + y,
-								cur_d * nx * ny + (x + 1) * ny + y,
+					G.add_edge(	cur_d * nx * ny + y * nx + x,
+								cur_d * nx * ny + (y + 1) * nx + x,
 								lambda,
 								lambda);
 				}
@@ -303,7 +303,7 @@ int main()
 		/////
 		/* WARNING: dummy code to replace */
 		cur_d = 0;
-		while (G.what_segment(cur_d * nx * ny + i * ny + j) == Graph<int,int,int>::SOURCE)
+		while (G.what_segment(cur_d * nx * ny + j * nx + i) == Graph<int,int,int>::SOURCE)
 			cur_d++;
 		D(i, j) = cur_d + dmin;
 		// cout << D(i,j) << endl;
