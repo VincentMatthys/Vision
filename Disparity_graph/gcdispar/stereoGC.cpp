@@ -179,8 +179,8 @@ int main()
 	int 	cur_d; // cur_d + dmin = current disparity
 	int		x;
 	int		y;
-	int		data_term; // data term
-	int		Kp;
+	float	data_term; // data term
+	float	Kp;
 
 	// nd layers with grid disposition
  	nbr_edges = (2 * nx * ny - nx - ny) * nd;
@@ -206,7 +206,7 @@ int main()
 									x * zoom + n, y * zoom + n,
 									x * zoom + n + cur_d + dmin, y * zoom + n,
 									n);
-				data_term = (data_term >= 0 ) ? round(wcc * sqrt(1 - data_term)) : wcc;
+				data_term = (data_term >= 0 ) ? wcc * sqrt(1 - data_term) : wcc;
 				// Kp = 1 + nd * 4 * lambda;
 				// Kp = (x == 0 || x == nx - 1) ? Kp - nd * lambda : Kp;
 				// Kp = (y == 0 || y == ny - 1) ? Kp - nd * lambda : Kp;
@@ -216,18 +216,18 @@ int main()
 					G.add_edge(	(cur_d - 1) * nx * ny + x * ny + y,
 								cur_d * nx * ny + x * ny + y,
 								data_term,
-								0);
+								INF);
 				}
 				else if (cur_d == 0)
 				{
 					G.add_tweights(	x * ny + y,
 									data_term,
-									0);
+									INF);
 				}
 				if (cur_d == nd - 1)
 				{
 					G.add_tweights(	(nd - 1) * nx * ny + x * ny + y,
-									0,
+									INF,
 									data_term);
 				}
 				// Add south connection if possible
