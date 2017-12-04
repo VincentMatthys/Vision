@@ -170,20 +170,21 @@ int main()
 	// Disparity range
 	int	nd = dmax - dmin;
 	// "Infinite" value
-	int	INF = 1000000;
+	int INF = 1000000;
 	// Create graph
 	/////------------------------------------------------------------
 	/////  BEGIN CODE TO COMPLETE: define appropriate graph G
 	/////
-	int	nbr_edges;
-	int cur_d; // cur_d + dmin = current disparity
-	int	x;
-	int	y;
-	int	data_term; // data term
+	int		nbr_edges;
+	int 	cur_d; // cur_d + dmin = current disparity
+	int		x;
+	int		y;
+	int		data_term; // data term
+	int		Kp;
 
-	// nd cur_ds with grid disposition
+	// nd layers with grid disposition
  	nbr_edges = (2 * nx * ny - nx - ny) * nd;
-	// nd - 1 cur_ds connected 1 to 1
+	// nd - 1 layers connected 1 to 1
 	nbr_edges += (nd - 1) * nx * ny;
 
 	Graph<int,int,int> G(nx * ny * nd, nbr_edges);
@@ -205,34 +206,39 @@ int main()
 									x * zoom + n, y * zoom + n,
 									x * zoom + n + cur_d + dmin, y * zoom + n,
 									n);
-				data_term = (data_term >= 0 ) ? wcc * sqrt(1 - data_term) : wcc;
-				if (cur_d + dmin > dmin && cur_d + dmin < nd - 1)
+				data_term = (data_term >= 0 ) ? round(wcc * sqrt(1 - data_term)) : wcc;
+				// Kp = 1 + nd * 4 * lambda;
+				// Kp = (x == 0 || x == nx - 1) ? Kp - nd * lambda : Kp;
+				// Kp = (y == 0 || y == ny - 1) ? Kp - nd * lambda : Kp;
+				// data_term += 5 * Kp;
+				if (cur_d > 0)
 				{
 					G.add_edge(	(cur_d - 1) * nx * ny + x * ny + y,
 								cur_d * nx * ny + x * ny + y,
 								data_term,
-								INF);
+								0);
 				}
-				else if (cur_d + dmin == dmin)
+				else if (cur_d == 0)
 				{
 					G.add_tweights(	x * ny + y,
 									data_term,
-									INF);
+									0);
 				}
-				else
+				if (cur_d == nd - 1)
 				{
 					G.add_tweights(	(nd - 1) * nx * ny + x * ny + y,
-									INF,
+									0,
 									data_term);
 				}
+				// Add south connection if possible
 				if (y < ny - 1)
 				{
 					G.add_edge(	cur_d * nx * ny + x * ny + y,
 								cur_d * nx * ny + x * ny + y + 1,
 								lambda,
 								lambda);
-
 				}
+				// Add east connection if possible
 				if (x < nx - 1)
 				{
 					G.add_edge(	cur_d * nx * ny +  x * ny + y,
@@ -248,7 +254,6 @@ int main()
 	}
 
 
-	cout << G.what_segment(0) << endl;
 	/* WARNING: dummy code to replace */ cout<<endl<<"***\n*** Dummy computation: code beeing completed!\n***"<<endl;
 	/////
 	/////  END CODE TO BE COMPLETED
@@ -264,6 +269,25 @@ int main()
 	cout << "done" << endl
 	 << "  max flow = " << f << endl;
 
+	// x = 0;
+ // 	while (x < nx)
+ // 	{
+ // 		y = 0;
+ // 		while (y < ny)
+ // 		{
+ // 			cur_d = 0;
+ // 			while (cur_d < nd)
+ // 			{
+ // 				if (G.what_segment(y * nx + y + cur_d * nx * ny) == Graph<int,int,int>::SOURCE)
+ // 					cout << y * nx + y + cur_d * nx * ny << " is in the SOURCE set" << endl;
+ // 				else
+ // 					cout << y * nx + y + cur_d * nx * ny << " is in the SINK set" << endl;
+ // 				cur_d++;
+ // 			}
+ // 			y++;
+ // 		}
+ // 		x++;
+ // 	}
 
 	///// Extract disparity map from minimum cut
 	cout << "Extracting disparity map from minimum cut... " << flush;
@@ -304,8 +328,8 @@ int main()
 	///// Compute and display blured disparity map
 	cout << "Click to compute and display blured disparity map... " << flush;
 	click();
-	D=blur(D,sigma);
-	display(enlarge(grey(D),zoom),n,n);
+	D = blur(D,sigma);
+	display(enlarge(grey(D), zoom), n, n);
 	// Done
 	cout << "done" << endl;
 
