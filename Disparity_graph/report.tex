@@ -5,7 +5,7 @@
 % ------------------------ General informations --------------------------------
 \title{MVA - 3D Computer Vision - Disparity using graph cuts}
 \author{Vincent Matthys}
-\graphicspath{{images/}{../images/}} % For the images path
+\graphicspath{{images/}{../images/}{gcdispar/}} % For the images path
 % ------------------------------------------------------------------------------
 
 
@@ -59,53 +59,85 @@ Le rapport qui suit regroupe différentes observations quand à son utilisation 
 
 \section{Présentation de cas fonctionnels}
 
-\subsection{Influence de la valeur du poids entre pixel non corrélés}
+\subsection{Résultats pour Thierry}
 
-En figure~\ref{fig_thierry_wcc} est présenté l'influence du poids \(w_{cc}\) entre pixels non corrélés sur la carte de disparité. Théoriquement, ce poids influence le niveau de discrétisation de l'énergie du graphe. En pratique, comme visible en figure~\ref{fig_thierry_disp_wcc_1000}, si ce poids est trop élevé, alors les variations de disparités entraînent une grande variation d'énergie, que le lissage ne suffit pas à compenser.
+En figure~\ref{fig_thierry_initial} sont présentées les deux vues de Thierry à partir desquelles la carte de disparité à été calculée.
 
 \begin{figure}[H]
+	\centering
+	\begin{subfigure}[b]{0.45\textwidth}
+		\centering
+		\includegraphics[width = \textwidth, angle = -90]{face00R}
+		\caption{Première vue}
+		\label{fig_thierry_1}
+	\end{subfigure}
+	\centering
+	\begin{subfigure}[b]{0.45\textwidth}
+		\centering
+		\includegraphics[width = \textwidth, angle = -90]{face01R}
+		\caption{Deuxième vue}
+		\label{fig_thierry_2}
+	\end{subfigure}
+	\caption{Les deux vues de Thierry à partir desquelles la carte de dispartié \ref{fig_thierry_3D} est calculée}
+	\label{fig_thierry_initial}
+\end{figure}
+
+La carte de dispartié obtenue est présentée en figure~\ref{fig_thierry_3D}. On constate que le résultat est réaliste, suffisamment lisse mais rendant compte des informations pertinentes.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width = 0.9\textwidth]{thierry_3D_usecase}
+	\caption{Carte de dispartié obtenue avec \(\sigma = 3\), \(w_{cc} = 20\), \(n = 7\)}
+	\label{fig_thierry_3D}
+\end{figure}
+
+\subsection{Influence de la valeur du poids entre pixel non corrélés}
+
+En figure~\ref{fig_thierry_wcc} est présenté l'influence du poids \(w_{cc}\) entre pixels non corrélés sur la carte de disparité. Pour ces expériences, on fixe \(n = 3\) et \(\sigma = 3\). Théoriquement, ce poids influence le niveau de discrétisation de l'énergie du graphe. En pratique, comme visible en figure~\ref{fig_thierry_disp_wcc_1000}, si ce poids est trop élevé, alors les variations de disparités entraînent une grande variation d'énergie, que le lissage ne suffit pas à compenser.
+
+\begin{figure}[H]
+	\centering
 	\begin{subfigure}[b]{0.3\textwidth}
 		\centering
 		\includegraphics[height = 0.2\textheight, angle = -90]{thierry_disp_blur_3_z_2}
 		\caption{\(w_{cc} = 20\)}
 		\label{fig_thierry_disp_wcc_20}
 	\end{subfigure}
-	\hfill
+	\centering
 	\begin{subfigure}[b]{0.3\textwidth}
 		\centering
 		\includegraphics[height = 0.2\textheight, angle = -90]{thierry_disp_wcc_100}
 		\caption{\(w_{cc} = 100\)}
 		\label{fig_thierry_disp_wcc_100}
 	\end{subfigure}
-	\hfill
+	\centering
 	\begin{subfigure}[b]{0.3\textwidth}
 		\centering
 		\includegraphics[height = 0.2\textheight, angle = -90]{thierry_disp_wcc_1000}
 		\caption{\(w_{cc} = 1000\)}
 		\label{fig_thierry_disp_wcc_1000}
 	\end{subfigure}
-	\hfill
+	\centering
 	\begin{subfigure}[b]{0.3\textwidth}
 		\centering
 		\includegraphics[height = 0.2\textheight]{thierry_3D_blur_3_z_2}
 		\caption{\(w_{cc} = 20\)}
 		\label{fig_thierry_3D_wcc_20}
 	\end{subfigure}
-	\hfill
+	\centering
 	\begin{subfigure}[b]{0.3\textwidth}
 		\centering
 		\includegraphics[height = 0.2\textheight]{thierry_3D_wcc_100}
 		\caption{\(w_{cc} = 100\)}
 		\label{fig_thierry_3D_wcc_100}
 	\end{subfigure}
-	\hfill
+	\centering
 	\begin{subfigure}[b]{0.3\textwidth}
 		\centering
 		\includegraphics[height = 0.2\textheight]{thierry_3D_wcc_1000}
 		\caption{\(w_{cc} = 1000\)}
 		\label{fig_thierry_3D_wcc_1000}
 	\end{subfigure}
-	\hfill
 	\caption{Carte de disparité obtenue pour différentes valeurs de poids entre pixels non corrélés \(w_{cc}\)}
 	\label{fig_thierry_wcc}
 \end{figure}
@@ -113,7 +145,7 @@ En figure~\ref{fig_thierry_wcc} est présenté l'influence du poids \(w_{cc}\) e
 
 \subsection{Influence de la valeur de lissage}
 
-En figure~\ref{fig_thierry} est présenté le résultat obtenu pour différentes valeurs de lissage. On constate que les valeurs 3, 5 et 8 donnent des résultats similaires pour cette reconstruction. En revanche, comme attendu, des valeurs trop faibles de \(\sigma\) donne des discontinuités omniprésentes. A l'inverse, une trop grande valeur de lissage fait perdre de l'information.
+En figure~\ref{fig_thierry} est présenté le résultat obtenu pour différentes valeurs de lissage. Pour ces expériences, on fixe \(n = 3\) et \(w_{cc} = 20\). On constate que les valeurs 3, 5 et 8 donnent des résultats similaires pour cette reconstruction. En revanche, comme attendu, des valeurs trop faibles de \(\sigma\) donne des discontinuités omniprésentes. A l'inverse, une trop grande valeur de lissage fait perdre de l'information.
 
 \begin{figure}[H]
 	\centering
@@ -206,6 +238,49 @@ En figure~\ref{fig_thierry} est présenté le résultat obtenu pour différentes
 
 
 \section{Comparaison avec l'expansion de graines}
+
+
+En figure~\ref{fig_toys_initial} sont présentées l'image gauche et l'image droite de la scène de jouets à partir desquelles la carte de disparité à été calculée.
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}[b]{0.45\textwidth}
+		\centering
+		\includegraphics[width = \textwidth]{toys01}
+		\caption{Vue de gauche}
+		\label{fig_toys_1}
+	\end{subfigure}
+	\centering
+	\begin{subfigure}[b]{0.45\textwidth}
+		\centering
+		\includegraphics[width = \textwidth]{toys02}
+		\caption{Vue de droite}
+		\label{fig_toys_2}
+	\end{subfigure}
+	\caption{Les deux vues de la scène de jouets à partir desquelles la carte de dispartié \ref{fig_toys_3D} est calculée}
+	\label{fig_toys_initial}
+\end{figure}
+
+La carte de dispartié obtenue est présentée en figure~\ref{fig_toys_3D}, et on peut la comparer à celle obtenue par expansion de graines visible en figure~\ref{fig_seeds_3D} : les niveaux de disparités recherchés sont, dans les deux cas, dans l'intervalle \([-30, -7]\). Il faut faire abstraction du fait que les niveaux de disparité pour la méthode par expansion n'est pas lissée. On constate néanmoins de gros défaut sur la méthode par expansion, notamment quand on visualise la carte de dispartié de profil, avec un nombre non négligeable de niveaux de disparité aberrants, qu'on ne retrouve pas par la méthode par graph cuts.
+
+Le temps d'exécution de la méthode par graph cuts est de \(54~s\) avec un facteur de zoom 2, quand la méthode par expansion de graine prend \(69~s\). En définitif, la méthode par graph cuts, plus rapide à condition de prendre un facteur de zoon raisonnable, doit être correctement paramétrisé pour obtenir des résultats plus corrects que la méthode par expansion de graines.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[height = 0.4\textheight]{toys_disp}
+	\includegraphics[height = 0.4\textheight]{toys_3D}
+	\caption{Carte de dispartié obtenue avec \(\sigma = 3\), \(w_{cc} = 20\), \(n = 7\) et un facteur de zoom 2}
+	\label{fig_toys_3D}
+\end{figure}
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[height = 0.4\textheight]{seeds_3D_1}
+	\includegraphics[height = 0.4\textheight]{seeds_3D}
+	\caption{Carte de dispartié obtenue par expansion de graines pour la même taille de fenêtre \(n = 7\)}
+	\label{fig_seeds_3D}
+\end{figure}
 
 
 \end{document}
