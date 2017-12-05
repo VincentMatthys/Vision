@@ -17,10 +17,10 @@ static const float EPS = 0.1f;
 // ----------------------------- Functional use cases --------------------------
 // Please only define one of the two cases
 // For Thierry's face
-// #define THIERRY
+#define THIERRY
 
 // For toys
-#define TOYS
+// #define TOYS
 // -----------------------------------------------------------------------------
 
 /*
@@ -191,7 +191,6 @@ int main(int argc, char **argv)
 	dmin = -30;     // Minmum disparity
 	dmax = -7;     // Maximum disparity
 #endif
-	cout << dmin << flush << endl;
 	float fB = 40000;  // Depth factor
 	float db = 100;    // Disparity base
 	// Done
