@@ -34,4 +34,33 @@
 
 \tableofcontents
 
+\clearpage
+
+Ce rapporte accompagne le programme \textit{stereoGC} d'estimation de carte de disparité à partir de deux vues d'une même scène. Afin d'executer ce programme, il faut dans un premier temps lancer les commandes suivantes
+
+\begin{lstlisting}[numbers = none]
+cmake CMakeLists.txt
+make
+\end{lstlisting}
+
+Qui produit un executable dans le répertoire courant \textit{stereoGC}. On exécute le programme sur deux images \textit{im1} et \textit{im2} de la façon suivante :
+
+\begin{lstlisting}[numbers = none]
+./stereoGC im1 im2
+\end{lstlisting}
+
+Deux utilisations modèles sont utilisables en définissant dans le préambule le \textit{define} correspondants :
+\begin{itemize}
+	\item THIERRY : charge les deux images du visage de Thierry ainsi que les paramètres raisonnables associés ; en particulier on se limite à une recherche de disparité \(d \in [10, 55]\).
+	\item TOYS : charge les deux images de la scène des jouets ainsi que les paramètre raisonnables associés  ; en particulier on se limite à une recherche de disparité \(d \in [-30, -7]\).
+\end{itemize}
+
+Le rapport qui suit regroupe différentes observations quand à son utilisation sur différentes images et avec différents paramètres.
+
+\section{Présentation de cas fonctionnels}
+
+
+\section{Comparaison avec l'expansion de graines}
+
+
 \end{document}
