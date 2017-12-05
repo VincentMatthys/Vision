@@ -17,10 +17,10 @@ static const float EPS = 0.1f;
 // ----------------------------- Functional use cases --------------------------
 // Please only define one of the two cases
 // For Thierry's face
-#define THIERRY
+// #define THIERRY
 
 // For toys
-// #define TOYS
+#define TOYS
 // -----------------------------------------------------------------------------
 
 /*
