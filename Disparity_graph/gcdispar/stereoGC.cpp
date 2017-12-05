@@ -14,6 +14,14 @@ typedef Image<double> doubleImage;
 // To avoid division by 0 for constant patch
 static const float EPS = 0.1f;
 
+// ----------------------------- Functional use cases --------------------------
+// Please only define one of the two cases
+// For Thierry's face
+// #define THIERRY
+
+// For toys
+#define TOYS
+// -----------------------------------------------------------------------------
 
 /*
  * Return image of mean intensity value over (2n+1)x(2n+1) patch
@@ -111,20 +119,53 @@ double zncc(
  * Display disparity map.
  * Display 3D mesh of corresponding depth map.
  */
-int main()
+int main(int argc, char **argv)
 {
+	if (argc != 1 && argc != 3)
+	{
+		cout << "Please pass 2 images to compute disparity" << flush << endl;
+		return (0);
+	}
 	///// Load and crop images
 	cout << "Loading images... " << flush;
 	byteImage I;
 	doubleImage I1,I2; // First and second image
-	// Load Thierry's face (seen from bottom)
-	load(I, srcPath("face00R.png"));
-	// Crop it
-	I1 = I.getSubImage(IntPoint2(20,30), IntPoint2(430,420));
-	// Load Thierry's face (seen from top)
-	load(I, srcPath("face01R.png"));
-	// Crop it
-	I2 = I.getSubImage(IntPoint2(20,30), IntPoint2(480,420));
+	if (argc == 1)
+	{
+	#ifdef THIERRY
+		// Load Thierry's face (seen from bottom)
+		load(I, srcPath("face00R.png"));
+		// Crop it
+		I1 = I.getSubImage(IntPoint2(20, 30), IntPoint2(430,420));
+		// Load Thierry's face (seen from top)
+		load(I, srcPath("face01R.png"));
+		// Crop it
+		I2 = I.getSubImage(IntPoint2(20, 30), IntPoint2(480,420));
+	#endif
+	#ifdef TOYS
+		// Load Thierry's face (seen from bottom)
+		load(I, srcPath("toys01.jpg"));
+		// Crop it
+		I1 = I.getSubImage(IntPoint2(20, 30), IntPoint2(I.width() - 20, I.height() - 30));
+		// Load Thierry's face (seen from top)
+		load(I, srcPath("toys02.jpg"));
+		// Crop it
+		I2 = I.getSubImage(IntPoint2(20, 30), IntPoint2(I.width() - 20, I.height() - 30));
+	#endif
+	}
+	else
+	{
+		// Load Thierry's face (seen from bottom)
+		load(I, argv[1]);
+		// Crop it
+		// I1 = I.getSubImage(IntPoint2(20,30), IntPoint2(430,420));
+		I1 = I.getSubImage(IntPoint2(20,30), IntPoint2(I.width() - 20, I.height() - 30));
+		// Load Thierry's face (seen from top)
+		load(I, argv[2]);
+		// Crop it
+		// I2 = I.getSubImage(IntPoint2(20,30), IntPoint2(480,420));
+		I2 = I.getSubImage(IntPoint2(20,30), IntPoint2(I.width() - 20, I.height() - 30));
+	}
 	// Done
 	cout << "done" << endl;
 
@@ -140,8 +181,17 @@ int main()
 	float sigma = 3;   // Gaussian blur parameter for disparity
 	// Image-specific, hard-coded parameters for approximate 3D reconstruction,
 	// as real geometry before rectification is not known
-	int dmin = 10;     // Minmum disparity
-	int dmax = 55;     // Maximum disparity
+	int dmin = -20;     // Minmum disparity
+	int dmax = 20;     // Maximum disparity
+#ifdef THIERRY
+	dmin = 10;     // Minmum disparity
+	dmax = 55;     // Maximum disparity
+#endif
+#ifdef TOYS
+	dmin = -30;     // Minmum disparity
+	dmax = -7;     // Maximum disparity
+#endif
+	cout << dmin << flush << endl;
 	float fB = 40000;  // Depth factor
 	float db = 100;    // Disparity base
 	// Done
@@ -159,7 +209,6 @@ int main()
 	display(grey(I2), w1, 0);
 	// Done
 	cout << "done" << endl;
-
 
 	///// Construct graph
 	cout << "Constructing graph (be patient)... " << flush;
@@ -180,16 +229,13 @@ int main()
 	int		x;
 	int		y;
 	float	data_term; // data term
-	float	Kp;
-
 	// nd layers with grid disposition
  	nbr_edges = (2 * nx * ny - nx - ny) * nd;
 	// nd - 1 layers connected 1 to 1
-	nbr_edges += (nd - 1) * nx * ny;
-
+	if (nd >= 1)
+		nbr_edges += (nd - 1) * nx * ny;
 	Graph<int,int,int> G(nx * ny * nd, nbr_edges);
 	G.add_node(nx * ny * nd);
-
 	x = 0;
 	while (x < nx)
 	{
@@ -199,18 +245,22 @@ int main()
 			cur_d = 0;
 			while (cur_d < nd)
 			{
-				data_term = zncc(	I1,
-									I1M,
-									I2,
-									I2M,
-									x * zoom + n, y * zoom + n,
-									x * zoom + n + cur_d + dmin, y * zoom + n,
-									n);
-				data_term = (data_term >= 0 ) ? wcc * sqrt(1 - data_term) : wcc;
-				// Kp = 1 + nd * 4 * lambda;
-				// Kp = (x == 0 || x == nx - 1) ? Kp - nd * lambda : Kp;
-				// Kp = (y == 0 || y == ny - 1) ? Kp - nd * lambda : Kp;
-				// data_term += 5 * Kp;
+				if (x * zoom > 0
+				&& x * zoom < w1 - n
+				&& x * zoom + cur_d + dmin > 0
+				&& x * zoom + cur_d + dmin < w2 - n)
+				{
+					data_term = zncc(	I1,
+										I1M,
+										I2,
+										I2M,
+										x * zoom + n, y * zoom + n,
+										x * zoom + n + cur_d + dmin, y * zoom + n,
+										n);
+					data_term = (data_term >= 0 ) ? wcc * sqrt(1 - data_term) : wcc;
+				}
+				else
+					data_term = wcc;
 				if (cur_d > 0)
 				{
 					G.add_edge(	(cur_d - 1) * nx * ny + y * nx + x,
@@ -252,9 +302,6 @@ int main()
 		}
 		x++;
 	}
-
-
-	/* WARNING: dummy code to replace */ cout<<endl<<"***\n*** Dummy computation: code beeing completed!\n***"<<endl;
 	/////
 	/////  END CODE TO BE COMPLETED
 	/////------------------------------------------------------------
@@ -269,26 +316,6 @@ int main()
 	cout << "done" << endl
 	 << "  max flow = " << f << endl;
 
-	// x = 0;
- // 	while (x < nx)
- // 	{
- // 		y = 0;
- // 		while (y < ny)
- // 		{
- // 			cur_d = 0;
- // 			while (cur_d < nd)
- // 			{
- // 				if (G.what_segment(y * nx + y + cur_d * nx * ny) == Graph<int,int,int>::SOURCE)
- // 					cout << y * nx + y + cur_d * nx * ny << " is in the SOURCE set" << endl;
- // 				else
- // 					cout << y * nx + y + cur_d * nx * ny << " is in the SINK set" << endl;
- // 				cur_d++;
- // 			}
- // 			y++;
- // 		}
- // 		x++;
- // 	}
-
 	///// Extract disparity map from minimum cut
 	cout << "Extracting disparity map from minimum cut... " << flush;
 	doubleImage D(nx,ny);
@@ -301,13 +328,10 @@ int main()
 		/////------------------------------------------------------------
 		/////  BEGIN CODE TO BE COMPLETED: define disparity map D from graph G and minimum cut
 		/////
-		/* WARNING: dummy code to replace */
 		cur_d = 0;
 		while (G.what_segment(cur_d * nx * ny + j * nx + i) == Graph<int,int,int>::SOURCE)
 			cur_d++;
 		D(i, j) = cur_d + dmin;
-		// cout << D(i,j) << endl;
-
 		/////
 		/////  END CODE TO BE COMPLETED
 		/////------------------------------------------------------------
@@ -338,7 +362,7 @@ int main()
 	cout << "Click to compute depth map and 3D mesh renderings... " << flush;
 	click();
 	// Open new window and make it active
-	Window W = openWindow3D(512, 512, "3D");
+	Window W = openWindow3D(I.width(), I.height(), "3D");
 	setActiveWindow(W);
 	///// Compute 3D points
 	Array<FloatPoint3> p(nx*ny);
